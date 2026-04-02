@@ -754,6 +754,7 @@ function selectedDepartmentValues(){ return [...document.querySelectorAll('#dept
 function selectedPogValues(){ return [...document.querySelectorAll('#pogChecklist input[type=checkbox]:checked')].map(x=>x.value); }
 function specialTasks(){
   return [
+    {id:'AD', name:'AD', department:'Operations', type:'TASK'},
     {id:'PC', name:'Price Change (PC)', department:'Operations', type:'TASK'},
     {id:'RFID', name:'RFID', department:'Operations', type:'TASK'}
   ];
@@ -763,17 +764,36 @@ function taskHoursValue(taskId){
   const el = document.getElementById('taskHours_' + taskId);
   return el ? safe(el.value) : '';
 }
+function customTaskData(){
+  const enabled = !!document.getElementById('customTaskToggle')?.checked;
+  const name = safe($('customTaskName')?.value).replace(/\s+/g,' ').trim();
+  const hours = safe($('customTaskHours')?.value);
+  return {enabled, name, hours};
+}
 function renderTaskChecklist(){
   const wrap = $('taskChecklist');
   if(!wrap) return;
-  wrap.innerHTML = specialTasks().map(t =>
+  const presetRows = specialTasks().map(t =>
     '<label class="checkrow" style="display:grid;grid-template-columns:18px 1fr 80px;align-items:center;gap:10px">'
     + '<input type="checkbox" value="'+esc(t.id)+'">'
     + '<span><strong>'+esc(t.name)+'</strong><div class="small muted">Always available</div></span>'
     + '<input id="taskHours_'+esc(t.id)+'" type="number" step="0.1" min="0" placeholder="hrs">'
     + '</label>'
   ).join('');
-  wrap.querySelectorAll('input').forEach(el=>el.addEventListener('change', updateBulkHint));
+  const customRow = ''
+    + '<div style="border-top:1px solid #d8e4dc;margin-top:10px;padding-top:10px">'
+    +   '<label class="checkrow" style="display:grid;grid-template-columns:18px 1fr 110px 80px;align-items:center;gap:10px">'
+    +     '<input id="customTaskToggle" type="checkbox" value="__CUSTOM__">'
+    +     '<span><strong>Custom task</strong><div class="small muted">Type any non-POG task</div></span>'
+    +     '<input id="customTaskName" type="text" placeholder="Task name">'
+    +     '<input id="customTaskHours" type="number" step="0.1" min="0" placeholder="hrs">'
+    +   '</label>'
+    + '</div>';
+  wrap.innerHTML = presetRows + customRow;
+  wrap.querySelectorAll('input').forEach(el=>{
+    el.addEventListener('change', updateBulkHint);
+    el.addEventListener('input', updateBulkHint);
+  });
 }
 function renderDeptChecklist(){
   const wrap = $('deptChecklist');
@@ -828,17 +848,26 @@ function renderSplitSummary(){
 function updateBulkHint(){
   const box=$('bulkHint'); box.style.display='none'; box.textContent='';
   const day=safe($('pDay').value), team=safe($('pTeam').value), selectedIds=selectedPogValues(), taskIds=selectedTaskValues();
-  if(!day || !team || (!selectedIds.length && !taskIds.length)) return;
+  const customTask = customTaskData();
+  const hasCustomTask = customTask.enabled && (customTask.name || customTask.hours);
+  if(!day || !team || (!selectedIds.length && !taskIds.length && !hasCustomTask)) return;
   const selected = state.pogs.filter(p=>selectedIds.includes(p.pogId));
+  const regularTaskIds = taskIds.filter(id=>id !== '__CUSTOM__');
   const pogProjected = +selected.reduce((sum,p)=>sum + (isSplitRequired(p.setHours)?0:Number(p.setHours||0)), 0).toFixed(2);
-  const taskProjected = +taskIds.reduce((sum,id)=>sum + Number(taskHoursValue(id)||0), 0).toFixed(2);
+  const taskProjectedBase = regularTaskIds.reduce((sum,id)=>sum + Number(taskHoursValue(id)||0), 0);
+  const customTaskProjected = customTask.enabled ? Number(customTask.hours||0) : 0;
+  const taskProjected = +(taskProjectedBase + customTaskProjected).toFixed(2);
   const scheduled = getTeamHours(team, day);
   const dayTotalAfter = +(dayTotal(team,day)+pogProjected+taskProjected).toFixed(2);
   const splitItems = selected.filter(p=>isSplitRequired(p.setHours));
   const selectedTotal = +selected.reduce((sum,p)=>sum + Number(p.setHours||0), 0).toFixed(2);
+  let taskCount = regularTaskIds.length;
   let msgParts = [];
   if(selectedIds.length) msgParts.push('Selected ' + selected.length + ' POG(s) totaling ' + selectedTotal + ' set hours.');
-  if(taskIds.length) msgParts.push('Selected ' + taskIds.length + ' task(s) totaling ' + taskProjected + ' hrs.');
+  if(customTask.enabled && !customTask.name && customTask.hours) msgParts.push('Custom task has hours entered but no task name yet.');
+  if(customTask.enabled && customTask.name && !Number(customTask.hours||0)) msgParts.push('Custom task "' + customTask.name + '" needs hours before you add it.');
+  if(customTask.enabled && customTask.name && Number(customTask.hours||0) > 0) taskCount += 1;
+  if(taskCount) msgParts.push('Selected ' + taskCount + ' task(s) totaling ' + taskProjected + ' hrs.');
   if(splitItems.length) msgParts.push(splitItems.length + ' large POG(s) over 8 hrs still need manual split tracking after bulk add and will remain available until fully assigned.');
   if(dayTotalAfter > scheduled && scheduled >= 0) msgParts.push('Warning: this bulk add would put ' + team + ' at ' + dayTotalAfter + ' hrs on ' + day + ' vs ' + scheduled + ' scheduled.');
   box.style.display='block'; box.textContent=msgParts.join(' ');
@@ -1011,7 +1040,12 @@ function unassignAllPogs(){
 function addBulkPlans(){
  const day=safe($('pDay').value), teamMember=safe($('pTeam').value), status='Planned', notes=safe($('pNotes').value);
  const ids=selectedPogValues(), taskIds=selectedTaskValues();
- if(!day||!teamMember||(!ids.length && !taskIds.length)) return alert('Choose a day, team member, and at least one POG or task.');
+ const customTask = customTaskData();
+ const regularTaskIds = taskIds.filter(id=>id !== '__CUSTOM__');
+ const hasCustomTask = customTask.enabled && customTask.name && Number(customTask.hours||0) > 0;
+ if(!day||!teamMember||(!ids.length && !regularTaskIds.length && !hasCustomTask)) return alert('Choose a day, team member, and at least one POG or task.');
+ if(customTask.enabled && !customTask.name && customTask.hours) return alert('Enter a custom task name before adding custom task hours.');
+ if(customTask.enabled && customTask.name && !Number(customTask.hours||0)) return alert('Enter hours for the custom task.');
  if(getTeamHours(teamMember, day) <= 0) return alert(teamMember + ' is not scheduled on ' + day + '.');
  const chosen=state.pogs.filter(p=>ids.includes(p.pogId));
  let added=0;
@@ -1024,7 +1058,7 @@ function addBulkPlans(){
    added++;
  }
  const taskMap = Object.fromEntries(specialTasks().map(t=>[t.id,t]));
- for(const id of taskIds){
+ for(const id of regularTaskIds){
    const task = taskMap[id];
    if(!task) continue;
    const hrs = taskHoursValue(id);
@@ -1045,9 +1079,27 @@ function addBulkPlans(){
    });
    added++;
  }
+ if(hasCustomTask){
+   state.plans.push({
+     day,
+     teamMember,
+     department:'Operations',
+     type:'TASK',
+     pogSelection:customTask.name,
+     pogId:'',
+     description:customTask.name,
+     setHours:customTask.hours,
+     assignedHours:customTask.hours,
+     imageRef:'',
+     imageLink:'',
+     notes:notes,
+     status
+   });
+   added++;
+ }
  save(false);
  document.querySelectorAll('#pogChecklist input[type=checkbox], #taskChecklist input[type=checkbox]').forEach(x=>x.checked=false);
- document.querySelectorAll('#taskChecklist input[type=number]').forEach(x=>x.value='');
+ document.querySelectorAll('#taskChecklist input[type=number], #taskChecklist input[type=text]').forEach(x=>x.value='');
  $('pNotes').value='';
  updateBulkHint();
  show(added+' assignment(s) added.');
@@ -1286,7 +1338,7 @@ $('hideZeroDept').onchange=()=>renderDeptChecklist();
 if($('unassignAll')) $('unassignAll').onclick=unassignAllPogs;
 $('splitAssignConfirm').onclick=confirmSplitAssign; $('splitAssignCancel').onclick=closeSplitAssignModal; $('splitModal').onclick=(e)=>{ if(e.target.id==='splitModal') closeSplitAssignModal(); };
 $('addTeam').onclick=addTeam; $('addDept').onclick=addDept; $('addRule').onclick=addRule; $('previewRuleBulk').onclick=previewRuleBulkImport; $('importRuleBulk').onclick=importRuleBulkText; $('addPog').onclick=addPog; $('previewBtn').onclick=doPreview; $('smartImport').onclick=doImport; $('clearLib').onclick=()=>{if(confirm('Clear the whole POG library?')){state.pogs=[]; save()}}; $('sampleBtn').onclick=()=>{[{department:'Amplified Gifting Fixtures',type:'POG',pogId:'J1070TX',description:'Cart 2: Lego Botanicals',setHours:'9.1',imageRef:'J1070TX.png',imageLink:''},{department:'Amplified Gifting Fixtures',type:'REV',pogId:'J1070UW',description:'Cart 3: Spring Floral',setHours:'3.1',imageRef:'J1070UW.png',imageLink:''},{department:'Checklanes',type:'POG',pogId:'J1529O0',description:'Core Power + Zbar 4/5',setHours:'1.5',imageRef:'J1529O0.png',imageLink:''}].forEach(p=>{ensureDept(p.department); state.pogs.push(p)}); save(false); show('Sample data loaded.')};
-$('addBulkPlans').onclick=addBulkPlans; $('clearPlan').onclick=()=>{document.querySelectorAll('#deptChecklist input,#pogChecklist input,#taskChecklist input[type=checkbox]').forEach(x=>x.checked=false); document.querySelectorAll('#taskChecklist input[type=number]').forEach(x=>x.value=''); $('pNotes').value=''; updateBulkHint();}; if($('hideZeroDept')) $('hideZeroDept').onchange=renderDeptChecklist;  $('pTeam').onchange=updateBulkHint; $('splitMode').onchange=()=>save(false); if($('genEmail')) $('genEmail').onclick=genEmail; if($('copyEmail')) $('copyEmail').onclick=copyEmailDraft; $('exportBtn').onclick=exportData; $('importFile').onchange=e=>{if(e.target.files&&e.target.files[0]) importData(e.target.files[0])}; $('resetAll').onclick=()=>{if(confirm('Reset everything in the app?')){state={team:[],departments:[],rules:[],pogs:[],plans:[],settings:{splitMode:'warn'}}; save(false); $('parsePreview').innerHTML='Nothing parsed yet.'; show('Everything was reset.')}}; window.delTeam=delTeam; window.delDept=delDept; window.delRule=delRule; window.delPog=delPog; window.delPlan=delPlan;
+$('addBulkPlans').onclick=addBulkPlans; $('clearPlan').onclick=()=>{document.querySelectorAll('#deptChecklist input,#pogChecklist input,#taskChecklist input[type=checkbox]').forEach(x=>x.checked=false); document.querySelectorAll('#taskChecklist input[type=number],#taskChecklist input[type=text]').forEach(x=>x.value=''); $('pNotes').value=''; updateBulkHint();}; if($('hideZeroDept')) $('hideZeroDept').onchange=renderDeptChecklist;  $('pTeam').onchange=updateBulkHint; $('splitMode').onchange=()=>save(false); if($('genEmail')) $('genEmail').onclick=genEmail; if($('copyEmail')) $('copyEmail').onclick=copyEmailDraft; $('exportBtn').onclick=exportData; $('importFile').onchange=e=>{if(e.target.files&&e.target.files[0]) importData(e.target.files[0])}; $('resetAll').onclick=()=>{if(confirm('Reset everything in the app?')){state={team:[],departments:[],rules:[],pogs:[],plans:[],settings:{splitMode:'warn'}}; save(false); $('parsePreview').innerHTML='Nothing parsed yet.'; show('Everything was reset.')}}; window.delTeam=delTeam; window.delDept=delDept; window.delRule=delRule; window.delPog=delPog; window.delPlan=delPlan;
 load(); render();
 
 function parseRuleBulkText(text){
