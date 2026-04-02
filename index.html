@@ -1,0 +1,1440 @@
+<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>POG Workload Planner</title><style>
+:root{
+  --green-900:#244633;
+  --green-800:#2f5d46;
+  --green-700:#4f7a62;
+  --green-600:#6f947d;
+  --green-100:#e8f1eb;
+  --bg-1:#f7f5f1;
+  --bg-2:#f1eee8;
+  --card:#ffffff;
+  --line:#ddd6ca;
+  --line-2:#e9e3d8;
+  --text:#22312a;
+  --muted:#66746c;
+  --blue:#edf5fb;
+  --peach:#fceee3;
+  --sage:#e8f1e7;
+  --warn:#fff7df;
+  --danger:#fbe7e7;
+  --shadow-sm:0 2px 8px rgba(34,49,42,.05);
+  --shadow-md:0 10px 30px rgba(34,49,42,.07);
+  --shadow-lg:0 18px 40px rgba(34,49,42,.10);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(111,148,125,.10), transparent 20%),
+    linear-gradient(180deg,var(--bg-1) 0%, var(--bg-2) 100%);
+}
+header{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:linear-gradient(135deg,var(--green-800),var(--green-700));
+  color:#fff;
+  padding:22px 24px;
+  box-shadow:var(--shadow-lg);
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+header h1{
+  margin:0 0 8px;
+  font-size:clamp(1.8rem,2.8vw,2.8rem);
+  line-height:1.05;
+  letter-spacing:-.02em;
+}
+header > div{
+  max-width:880px;
+  font-size:1rem;
+  opacity:.96;
+}
+.container{
+  max-width:1460px;
+  margin:0 auto;
+  padding:24px;
+}
+.tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:4px 0 22px;
+}
+.tabbtn{
+  appearance:none;
+  border:1px solid #d9d2c7;
+  background:rgba(255,255,255,.92);
+  color:#355441;
+  padding:11px 16px;
+  border-radius:999px;
+  font-weight:700;
+  letter-spacing:.01em;
+  cursor:pointer;
+  box-shadow:var(--shadow-sm);
+  transition:transform .08s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+}
+.tabbtn:hover{
+  transform:translateY(-1px);
+  box-shadow:var(--shadow-md);
+  border-color:#c9c1b4;
+}
+.tabbtn.a{
+  background:var(--green-800);
+  color:#fff;
+  border-color:var(--green-800);
+  box-shadow:0 10px 24px rgba(47,93,70,.22);
+}
+.tab{display:none}
+.tab.a{display:block}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:20px;
+  margin:0 0 20px;
+  box-shadow:var(--shadow-md);
+}
+.card h2,.card h3{
+  margin:0 0 12px;
+  color:var(--green-900);
+  letter-spacing:-.01em;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(12, minmax(0, 1fr));
+  gap:14px;
+}
+.c12{grid-column:span 12}
+.c8{grid-column:span 8}
+.c6{grid-column:span 6}
+.c4{grid-column:span 4}
+.c3{grid-column:span 3}
+.c2{grid-column:span 2}
+@media(max-width:900px){
+  .container{padding:16px}
+  .c8,.c6,.c4,.c3,.c2{grid-column:span 12}
+  table{min-width:1180px}
+  .tw{overflow:auto}
+}
+
+label{
+  display:block;
+  margin:0 0 7px;
+  font-size:.88rem;
+  font-weight:700;
+  color:#385542;
+}
+input,select,textarea,button{font:inherit}
+input,select,textarea{
+  width:100%;
+  padding:12px 13px;
+  border:1px solid #d2cbc0;
+  border-radius:16px;
+  background:#fff;
+  color:var(--text);
+  outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease, transform .05s ease, background .15s ease;
+}
+input:hover,select:hover,textarea:hover{border-color:#c7beaf}
+input:focus,select:focus,textarea:focus{
+  border-color:#7ea18d;
+  box-shadow:0 0 0 4px rgba(95,139,113,.12);
+}
+textarea{
+  min-height:120px;
+  resize:vertical;
+}
+.sb{background:var(--blue)}
+.sn{background:var(--peach)}
+.ss{background:var(--sage)}
+
+button{
+  border:0;
+  border-radius:16px;
+  padding:11px 16px;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform .08s ease, opacity .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+button:hover{
+  transform:translateY(-1px);
+  box-shadow:var(--shadow-md);
+  filter:saturate(1.02);
+}
+button:active{transform:translateY(0)}
+button.p{background:var(--green-800);color:#fff}
+button.s{background:#eef4ef;color:#31513b}
+button.d{background:#f8e1e1;color:#a33f3f}
+.actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+th,td{
+  padding:12px 13px;
+  text-align:left;
+  vertical-align:top;
+  background:#fff;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+th:first-child,td:first-child{border-left:1px solid var(--line)}
+tr:first-child th{border-top:1px solid var(--line)}
+th{
+  position:sticky;
+  top:0;
+  background:#547861;
+  color:#fff;
+  z-index:1;
+}
+tbody tr:nth-child(even) td{background:#fcfbf9}
+tbody tr:hover td{background:#f7faf7}
+.over td{background:var(--warn)!important}
+.split td{background:#eef8ff!important}
+.editingRow td{background:#fff7df!important}
+.editingPogRow td{background:#eef8ff!important}
+
+.muted{color:var(--muted)}
+.empty{color:#888;font-style:italic}
+.warn{
+  background:var(--warn);
+  color:#7b5b00;
+  padding:12px 14px;
+  border-radius:16px;
+  border:1px solid #efe0a1;
+}
+.preview{
+  padding:15px;
+  border:1px dashed #d8d2c6;
+  border-radius:18px;
+  background:#fcfbf8;
+  line-height:1.55;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  background:var(--green-100);
+  color:#385542;
+  padding:6px 11px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:.84rem;
+  margin:3px 7px 3px 0;
+}
+.toast{
+  display:none;
+  background:#e7f6ea;
+  color:#215d38;
+  padding:12px 14px;
+  border-radius:16px;
+  margin-bottom:12px;
+  border:1px solid #c9e7cf;
+  box-shadow:var(--shadow-sm);
+}
+.small{font-size:.88rem}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 9px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:700;
+}
+.badgeWarn{background:#fff2cc;color:#7b5b00}
+.badgeOver{background:#f4cccc;color:#8a1c1c}
+.badgeOk{background:#d9ead3;color:#215d38}
+
+.checklist{
+  max-height:300px;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:10px;
+  background:linear-gradient(180deg,#fff,#fcfbf8);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+}
+.checkrow{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:12px 10px;
+  border-bottom:1px solid var(--line-2);
+  border-radius:14px;
+  transition:background .14s ease, box-shadow .14s ease, transform .08s ease;
+}
+.checkrow:last-child{border-bottom:none}
+.checkrow:hover{
+  background:#f7faf7;
+  box-shadow:inset 0 0 0 1px #e7efe9;
+}
+.checkrow input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  margin-top:2px;
+  flex:0 0 18px;
+  accent-color:var(--green-800);
+}
+.checkrow span{
+  flex:1;
+  line-height:1.42;
+  text-align:left;
+  color:#294032;
+}
+
+.card h2,.card h3{color:var(--green-900)}
+
+.report-wrap{display:grid;gap:18px}
+.report-day{
+  padding:18px;
+  border:1px solid #ded7cb;
+  border-radius:20px;
+  background:#fff;
+}
+.report-day h3{margin:0 0 12px;color:#2f4f38;font-size:1.2rem}
+.report-person{margin:14px 0 0}
+.report-person h4{margin:0 0 8px;color:#3f5f49;font-size:1rem}
+.report-total{margin-top:8px;font-weight:700;color:#2f4f38}
+.report-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff}
+.report-table th,.report-table td{border:1px solid #d8d2c6;padding:10px 12px;text-align:left}
+.report-table th{background:#4f7258;color:#fff}
+
+.board-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.board-panel{margin-top:14px}
+.board-hidden{display:none}
+.board-grid{display:grid;gap:12px}
+.board-person{border:1px solid var(--line);border-radius:18px;padding:14px;background:#fff}
+.board-person-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.board-person-name{font-weight:700;color:var(--green-900)}
+.board-meta{font-size:.86rem;color:var(--muted)}
+.board-list{display:grid;gap:8px}
+.board-item{padding:10px 12px;border:1px solid #e3ddd2;border-radius:14px;background:#fcfbf9}
+.board-item-title{font-weight:700;color:#2f4f38}
+.board-item-sub{font-size:.84rem;color:var(--muted);margin-top:2px}
+.board-day-col{display:grid;gap:12px}
+.board-day-title{font-size:1.05rem;font-weight:700;color:var(--green-900);margin:4px 0 0}
+
+
+#rules input,#rules select{min-height:48px}
+#rules #ruleDeptNew{width:100%}
+@media(max-width:900px){
+  #rules .grid .c12{grid-column:span 12}
+}
+
+
+.tabs{margin-bottom:18px}
+.card h2{margin-bottom:10px}
+.actions{align-items:center}
+#dash .preview{min-height:90px}
+
+
+/* UI polish only (no data/logic changes) */
+.card h2, .card h3 { font-weight: 800; letter-spacing: -0.01em; margin-bottom: 10px; }
+.container { padding: 16px; }
+.card { padding: 16px; border-radius: 18px; margin-bottom: 14px; }
+.tabs { margin-bottom: 14px; gap: 8px; }
+.tabbtn { padding: 10px 14px; border-radius: 999px; }
+label { margin-bottom: 6px; font-size: .85rem; }
+input, select, textarea { padding: 10px 12px; border-radius: 12px; }
+textarea { min-height: 110px; }
+.actions { gap: 8px; }
+button { padding: 10px 14px; border-radius: 12px; }
+.checklist { padding: 8px; border-radius: 14px; }
+.checkrow { padding: 10px 8px; border-radius: 10px; }
+th, td { padding: 10px 11px; }
+.small { font-size: .85rem; }
+
+
+.board-list.dropzone-active,.board-dropzone.dropzone-active{border:2px dashed #7ea18d;background:#f6fbf7}
+.board-item[draggable="true"]{cursor:grab}
+.board-item.dragging{opacity:.55}
+.board-dropzone{min-height:54px;border:1px dashed transparent;border-radius:14px;padding:4px}
+.board-empty-note{color:#888;font-style:italic;padding:10px 12px;border:1px dashed #ddd6ca;border-radius:12px;background:#fcfbf9}
+.board-help{font-size:.83rem;color:var(--muted);margin-top:8px}
+
+
+/* Planner board control layout cleanup */
+.board-toolbar{
+  display:grid !important;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:10px;
+  align-items:end;
+}
+.board-toolbar > *{
+  width:100%;
+  max-width:none !important;
+}
+.board-toolbar #toggleBoard{
+  white-space:nowrap;
+}
+@media(max-width:900px){
+  .board-toolbar{
+    grid-template-columns:1fr !important;
+  }
+}
+
+
+#splitModal select{margin-top:4px}
+
+</style></head><body><header><h1 style='margin:0 0 6px'>POG Workload Planner</h1><div>Workload planner</div></header><div class='container'>
+<div id='toast' class='toast'>Saved.</div>
+<div class='tabs'>
+<button class='tabbtn a' data-t='dash'>Dashboard</button><button class='tabbtn' data-t='team'>Team</button><button class='tabbtn' data-t='dept'>Departments</button><button class='tabbtn' data-t='rules'>Department Rules</button><button class='tabbtn' data-t='lib'>POG Library</button><button class='tabbtn' data-t='plan'>Planner</button><button class='tabbtn' data-t='report'>Report</button><button class='tabbtn' data-t='email'>Email</button><button class='tabbtn' data-t='backup'>Backup</button>
+</div>
+
+<section id='dash' class='tab a'><div class='card'><h2 style='margin-top:0'>How to use</h2><div class='pill'>1. Add team</div><div class='pill'>2. Add departments / rules</div><div class='pill'>3. Smart import raw workload</div><div class='pill'>4. Bulk assign by day + team</div><div class='pill'>5. Team list filters by day</div><div class='pill'>6. Copy email</div>
+<div class='grid' style='margin-top:12px'><div class='c4'><div class='preview'><strong>Team</strong><div id='stTeam' class='muted'></div></div></div><div class='c4'><div class='preview'><strong>Departments</strong><div id='stDept' class='muted'></div></div></div><div class='c4'><div class='preview'><strong>POGs</strong><div id='stPog' class='muted'></div></div></div></div>
+</div></section>
+
+<section id='team' class='tab'><div class='card'><h2 style='margin-top:0'>Team roster</h2><div class='grid'>
+<div class='c4'><label>Name</label><input id='teamName' placeholder='LeVonte'></div>
+<div class='c2'><label>Mon</label><input id='mon' type='number' step='0.25' value='0'></div><div class='c2'><label>Tue</label><input id='tue' type='number' step='0.25' value='0'></div><div class='c2'><label>Wed</label><input id='wed' type='number' step='0.25' value='0'></div><div class='c2'><label>Thu</label><input id='thu' type='number' step='0.25' value='0'></div><div class='c2'><label>Fri</label><input id='fri' type='number' step='0.25' value='0'></div><div class='c2'><label>Sat</label><input id='sat' type='number' step='0.25' value='0'></div><div class='c2'><label>Sun</label><input id='sun' type='number' step='0.25' value='0'></div>
+<div class='c12 actions'><button class='p' id='addTeam' onclick='addTeam()'>Add team member</button></div></div></div><div class='card tw'><table><thead><tr><th>Name</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th><th>Total</th><th>Actions</th></tr></thead><tbody id='teamBody'></tbody></table></div></section>
+
+<section id='dept' class='tab'><div class='card'><h2 style='margin-top:0'>Departments</h2><div class='grid'><div class='c6'><label>Department</label><input id='deptName' placeholder='Amplified Gifting Fixtures'></div><div class='c6 actions' style='align-items:end'><button class='p' id='addDept'>Add department</button></div></div></div><div class='card tw'><table><thead><tr><th>Department</th><th>POGs linked</th><th>Actions</th></tr></thead><tbody id='deptBody'></tbody></table></div></section>
+
+<section id='rules' class='tab'><div class='card'><h2 style='margin-top:0'>Department Rules</h2><div class='grid' style='margin-top:12px'>
+<div class='c3'><label>Prefix</label><input id='rulePrefix' placeholder='J107'></div>
+<div class='c12 c6'><label>Existing department</label><select id='ruleDept'></select></div>
+<div class='c12 c6'><label>Type a new department</label><input id='ruleDeptNew' class='sb' style='min-height:48px;font-size:16px' placeholder='Type a new department name here'></div>
+<div class='c12 actions'><button class='p' id='addRule'>Add rule</button></div>
+</div></div>
+<div class='card'><h3 style='margin-top:0'>Bulk import rules</h3>
+<div class='grid' style='margin-top:12px'>
+<div class='c12'><label>Paste rules list</label><textarea id='ruleBulkBox' class='sb' placeholder='J107	Amplified Gifting Fixtures
+J152	Checklanes
+J234 -> Bullseye Playground'></textarea></div>
+<div class='c12 actions'><button class='p' id='previewRuleBulk' onclick='previewRuleBulkImport()'>Preview rules</button><button class='p' id='importRuleBulk' onclick='importRuleBulkText()'>Import rules</button></div>
+<div class='c12'><label>Rule import preview</label><div id='ruleBulkPreview' class='preview empty'>Nothing parsed yet.</div></div>
+</div></div>
+<div class='card tw'><table><thead><tr><th>Prefix</th><th>Department</th><th>Actions</th></tr></thead><tbody id='ruleBody'></tbody></table></div></section>
+
+<section id='lib' class='tab'><div class='card'><h2 style='margin-top:0'>Smart import</h2><div class='grid' style='margin-top:12px'><div class='c12'><label>Paste raw workload</label><textarea id='rawBox' class='sb' placeholder='Amplified Gifting Fixtures
+POG
+J1070TX
+Cart 2: Lego Botanicals
+3.1
+54
+See adjacency'></textarea><div class='muted' style='margin-top:6px'>Also supports tab-separated, comma-separated, and grouped workload report text.</div></div><div class='c12 actions'><button class='p' id='smartImport' onclick='doImport()'>Smart Import</button><button class='s' id='previewBtn' onclick='doPreview()'>Preview Parse</button><button class='s' id='sampleBtn'>Load sample data</button><button class='d' id='clearLib'>Clear library</button></div><div class='c12'><label>Parse preview</label><div id='parsePreview' class='preview empty'>Nothing parsed yet.</div></div></div></div>
+<div class='card'><h3 style='margin-top:0'>Add one POG manually</h3><div class='grid'><div class='c3'><label>Department</label><select id='pogDept'></select></div><div class='c2'><label>Type</label><select id='pogType'><option value='POG'>POG</option><option value='REV'>REV</option><option value='SPL'>SPL</option></select></div><div class='c2'><label>POG ID</label><input id='pogId' placeholder='J1070TX'></div><div class='c3'><label>Description</label><input id='pogDesc' placeholder='Cart 2: Lego Botanicals'></div><div class='c2'><label>Set Hours</label><input id='pogHours' type='number' step='0.1'></div><div class='c3'><label>Image Ref</label><input id='imgRef'></div><div class='c6'><label>Image Link</label><input id='imgLink'></div><div class='c3 actions' style='align-items:end'><button class='p' id='addPog'>Add POG</button></div></div></div>
+<div class='card tw'><table><thead><tr><th>Department</th><th>Type</th><th>POG ID</th><th>Description</th><th>Hours</th><th>Split Rule</th><th>Image Ref</th><th>Image Link</th><th>Display</th><th>Actions</th></tr></thead><tbody id='pogBody'></tbody></table></div></section>
+
+<section id='plan' class='tab'><div class='card'><h2 style='margin-top:0'>Planner board</h2>
+<div class='board-toolbar'>
+<button class='s' id='toggleBoard'>Show board</button>
+<select id='boardMode' style='max-width:180px'><option value='daily'>Daily view</option><option value='weekly'>Weekly view</option></select>
+<select id='boardDay' style='max-width:180px'></select>
+</div>
+<div id='plannerBoardPanel' class='board-panel board-hidden'>
+  <div id='plannerBoardMount' class='preview'>Board hidden.</div>
+</div>
+</div><div class='card'><h2 style='margin-top:0'>Bulk planner</h2><div class='grid'>
+<div class='c3'><label>Split rule setting</label><select id='splitMode'><option value='warn'>Warn only</option><option value='block'>Block over 8 hrs per person</option></select></div>
+<div class='c3'><label>Day</label><select id='pDay'></select></div>
+<div class='c3'><label>Team member</label><select id='pTeam'></select></div>
+
+
+<div class='c12'><div id='teamDayHint' class='warn' style='display:none'></div></div>
+
+<div class='c4'><label>Select departments</label>
+<div style='display:flex;align-items:center;gap:10px;margin:0 0 10px'>
+  <input id='hideZeroDept' type='checkbox' style='width:18px;height:18px;margin:0;accent-color:#2f5d46'>
+  <label for='hideZeroDept' style='margin:0;font-size:.92rem;font-weight:700;color:#385542'>Hide Departments with no workload</label>
+</div>
+<div id='deptChecklist' class='checklist'></div></div>
+<div class='c8'><label>Select POGs <span class='small muted'>(hours shown next to each item)</span></label><div id='pogChecklist' class='checklist'></div></div>
+<div class='c4'><label>Always-available tasks</label><div id='taskChecklist' class='checklist'></div></div>
+
+<div class='c12'><label>Assignment note</label><textarea id='pNotes' class='sn' placeholder='Optional note'></textarea></div>
+<div class='c12'><div id='bulkHint' class='warn' style='display:none'></div></div>
+<div class='c12 actions'><button class='p' id='addBulkPlans'>Add selected POGs / Tasks</button><button class='s' id='clearPlan'>Clear selections</button></div>
+</div></div>
+
+<div class='card'><h3 style='margin-top:0'>Daily workload warning summary</h3><div id='summaryBox' class='preview empty'>No overload warnings yet.</div></div>
+<div class='card'><h3 style='margin-top:0'>Large POG split summary</h3><div id='splitSummaryBox' class='preview empty'>No split-required POGs assigned yet.</div></div>
+
+<div class='card tw'><table><thead><tr><th>Flag</th><th>Day</th><th>Team</th><th>Department</th><th>Type</th><th>POG</th><th>POG ID</th><th>Description</th><th>Set hrs</th><th>Assigned hrs</th><th>Remaining</th><th>Sched hrs</th><th>Day total</th><th>Status</th><th>Actions</th></tr></thead><tbody id='planBody'></tbody></table></div></section>
+
+<section id='report' class='tab'><div class='card'><h2 style='margin-top:0'>Work Report</h2><div class='actions' style='margin-top:12px'><button class='p' id='genReport'>Generate Report</button><button class='s' id='printReport'>Print / Save PDF</button></div></div><div class='card'><div id='reportOutput' class='preview empty'>No report generated yet.</div></div></section>
+<section id='email' class='tab'><div class='card'><h2 style='margin-top:0'>Email builder</h2><div class='grid' style='margin-top:12px'><div class='c6'><label>Email subject</label><input id='emailSubject' placeholder='Weekly Workload Plan'></div><div class='c6'><label>Opening line</label><input id='emailIntro' placeholder='Here is the workload plan for the upcoming week:'></div><div class='c12'><label>Email draft</label><textarea id='emailOut' style='min-height:360px'></textarea></div></div><div class='actions' style='margin-top:8px'><button class='p' id='genEmail' onclick='genEmail()'>Generate email</button><button class='s' id='copyEmail' onclick='copyEmailDraft()'>Copy email</button></div></div></section>
+
+<section id='backup' class='tab'><div class='card'><h2 style='margin-top:0'>Backup and restore</h2><div class='actions'><button class='p' id='exportBtn'>Export data</button><label for='importFile' class='s' style='display:inline-block;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700'>Import data</label><input id='importFile' type='file' accept='.json' style='display:none'><button class='d' id='resetAll'>Reset everything</button></div></div></section>
+
+<div id='splitModal' style='display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center;padding:18px'>
+  <div style='width:min(460px,100%);background:#fff;border:1px solid #ddd6ca;border-radius:20px;padding:18px;box-shadow:0 18px 40px rgba(34,49,42,.18)'>
+    <h3 style='margin:0 0 10px;color:#244633'>Quick split assignment</h3>
+    <div id='splitModalInfo' class='small muted' style='margin-bottom:12px'></div>
+    <label>Select another person</label>
+    <select id='splitAssignSelect'></select>
+    <div class='actions' style='margin-top:12px'>
+      <button class='p' id='splitAssignConfirm'>Assign selected person</button>
+      <button class='s' id='splitAssignCancel'>Cancel</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+const K='pog-planner-v9'; const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; const STAT=['Planned','In Progress','Done','Needs Review']; let state={team:[],departments:[],rules:[],pogs:[],plans:[],settings:{splitMode:'warn'}};
+const $=id=>document.getElementById(id), safe=v=>(v??'').toString().trim(), esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const show=m=>{const t=$('toast');t.textContent=m||'Saved.';t.style.display='block';setTimeout(()=>t.style.display='none',1800)};
+const total=h=>DAYS.reduce((n,d)=>n+Number((h||{})[d]||0),0), disp=p=>p.pogId+' - '+p.description;
+function normalizeType(v){
+  const t = safe(v).toUpperCase().replace(/\s+/g,' ');
+  if(t === 'REV') return 'REV';
+  if(t === 'SPL' || t === 'SALES PLANNER') return 'SPL';
+  return 'POG';
+}
+function norm(s){return safe(s).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function ensureDept(n){n=safe(n).replace(/\s+/g,' '); if(n&&!state.departments.includes(n)){state.departments.push(n); state.departments.sort()}}
+function save(toast=true){state.settings=state.settings||{splitMode:'warn'}; if($('splitMode')) state.settings.splitMode=$('splitMode').value; if($('boardMode')) state.settings.boardMode=$('boardMode').value; if($('boardDay')) state.settings.boardDay=$('boardDay').value; rebalanceAllSplitAssignments(); localStorage.setItem(K,JSON.stringify(state)); render(); if(toast) show('Saved.')}
+function load(){const raw=localStorage.getItem(K); if(raw){try{state=JSON.parse(raw)}catch(e){}} else {state.team=[{name:'LeVonte',hours:{Monday:0,Tuesday:0,Wednesday:8,Thursday:8,Friday:8,Saturday:0,Sunday:0}},{name:'Thomas',hours:{Monday:0,Tuesday:0,Wednesday:8,Thursday:8,Friday:8,Saturday:0,Sunday:0}},{name:'Faith',hours:{Monday:0,Tuesday:0,Wednesday:6,Thursday:6,Friday:6,Saturday:0,Sunday:0}}]; state.departments=['Amplified Gifting Fixtures','Checklanes','Entertainment']; state.rules=[{prefix:'J107',department:'Amplified Gifting Fixtures'},{prefix:'J152',department:'Checklanes'}]; state.settings={splitMode:'warn'};} if(!state.settings) state.settings={splitMode:'warn'}; if(!state.settings.boardMode) state.settings.boardMode='daily'; if(typeof state.settings.boardVisible!=='boolean') state.settings.boardVisible=false; if(!state.settings.boardDay) state.settings.boardDay='Monday'; rebalanceAllSplitAssignments();}
+function fillSel(el,items,ph){el.innerHTML='<option value="">'+ph+'</option>'+items.map(i=>'<option value="'+esc(i)+'">'+esc(i)+'</option>').join('')}
+function getAvailableTeamNames(day){ if(!day) return []; return state.team.filter(t=>Number((t.hours||{})[day]||0)>0).map(t=>t.name); }
+function renderTeamForSelectedDay(){
+  const day = safe($('pDay')?.value);
+  const available = getAvailableTeamNames(day);
+  fillSel($('pTeam'), available, day ? 'Select scheduled team member' : 'Select day first');
+  const box = $('teamDayHint');
+  if(!day){ box.style.display='none'; box.textContent=''; return; }
+  if(!available.length){
+    box.style.display='block';
+    box.textContent='No team members have hours scheduled on ' + day + '.';
+  } else {
+    box.style.display='block';
+    box.textContent='Showing only people scheduled on ' + day + '.';
+  }
+}
+function isNum(s){return /^-?\d+(\.\d+)?$/.test(safe(s))} function isHours(s){const n=Number(s); return isNum(s)&&n>=0&&n<=40} function isCount(s){const n=Number(s); return isNum(s)&&n>40}
+function isType(s){return /^(POG|REV|SPL|SALES\s*PLANNER)$/i.test(safe(s))}
+function isNoise(s){
+  const t=safe(s).toLowerCase();
+  return !t || [
+    'see adjacency','adjacency','pog images','description','set hours','type','rev images','hours','set hr','set hrs',
+    'pog % ready','intended location','salesfloor location','footage','sharepointopens in a new window','sharepoint'
+  ].includes(t) || /sharepoint/i.test(t);
+}
+function isPogId(s){const t=safe(s); return /^[A-Z0-9]{5,12}$/i.test(t)&&/[A-Z]/i.test(t)&&/\d/.test(t)&&!isType(t)}
+function cleanDeptLabel(s){ return safe(s).replace(/\s*\(\s*total\s+hours\s*:\s*[^)]*\)/i,'').replace(/\s+/g,' ').trim(); }
+function matchKnownDept(s){
+  const ns=norm(cleanDeptLabel(s));
+  if(!ns) return '';
+  const exact=state.departments.find(d=>norm(d)===ns);
+  if(exact) return exact;
+  const contains=state.departments.find(d=>ns.includes(norm(d)) || norm(d).includes(ns));
+  return contains || '';
+}
+function matchRuleByPogId(pogId){const id=safe(pogId).toUpperCase(); if(!id) return ''; const sorted=[...(state.rules||[])].sort((a,b)=>safe(b.prefix).length-safe(a.prefix).length); const hit=sorted.find(r=>id.startsWith(safe(r.prefix).toUpperCase())); return hit?hit.department:''}
+function isDeptGuess(s){
+  const t=cleanDeptLabel(s);
+  return t && !isType(t) && !isPogId(t) && !isHours(t) && !isCount(t) && !isNoise(t) && t.length>=3;
+}
+function parseLine(l){return l.includes('\t')?l.split('\t'):l.split(',').map(x=>x.trim())}
+function dedupe(rows){const seen=new Set(); return rows.filter(r=>{const k=[r.department,r.type,r.pogId,r.description,r.setHours].join('|').toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true})}
+function finalizeDept(department,pogId){return matchRuleByPogId(pogId) || matchKnownDept(department) || cleanDeptLabel(department)}
+function parseStructured(text){
+ const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); if(!lines.length) return []; let start=0,map=null; const first=parseLine(lines[0]).map(safe), low=first.map(x=>x.toLowerCase());
+ if(first.length>=4 && low.some(x=>x.includes('dept')||x=='department'||x=='pog id'||x.includes('description')||x.includes('hours'))){map={department:low.findIndex(x=>x.includes('dept')||x=='department'), type:low.findIndex(x=>x=='type'||x.includes('pog/rev')||x.includes('pog type')), pogId:low.findIndex(x=>x.includes('pog id')||x=='pogid'||x=='id'), description:low.findIndex(x=>x.includes('description')||x=='desc'), setHours:low.findIndex(x=>x.includes('hour')), imageRef:low.findIndex(x=>x.includes('image ref')), imageLink:low.findIndex(x=>x.includes('image link')||x.includes('url')||x.includes('link'))}; start=1;}
+ const rows=[]; 
+ for(let i=start;i<lines.length;i++){
+   const p=parseLine(lines[i]).map(safe); if(p.length<3) continue;
+   let department='', type='POG', pogId='', description='', setHours='', imageRef='', imageLink='';
+   if(map){ department=p[map.department]||''; if(map.type>=0) type=(p[map.type]||'POG').toUpperCase(); pogId=p[map.pogId]||''; description=p[map.description]||''; setHours=p[map.setHours]||''; if(map.imageRef>=0) imageRef=p[map.imageRef]||''; if(map.imageLink>=0) imageLink=p[map.imageLink]||''; }
+   else {
+     const typeCol = p.findIndex(x=>isType(x)); if(typeCol>=0) type=normalizeType(p[typeCol]);
+     const idCol = p.findIndex(x=>isPogId(x)); if(idCol>=0) pogId=p[idCol];
+     const hourCol = p.findIndex(x=>isHours(x)); if(hourCol>=0) setHours=p[hourCol];
+     const knownDeptCol = p.findIndex(x=>matchKnownDept(x)); if(knownDeptCol>=0) department=matchKnownDept(p[knownDeptCol]);
+     const descCol = p.findIndex((x,idx)=>idx!==knownDeptCol && idx!==idCol && idx!==hourCol && idx!==typeCol && !isType(x) && !isNoise(x) && !matchKnownDept(x)); if(descCol>=0) description=p[descCol];
+     if(!department && p[0] && !isType(p[0]) && !isPogId(p[0]) && !isHours(p[0])) department=p[0];
+   }
+   department=finalizeDept(department,pogId); type=normalizeType(type||'POG');
+   if(department && pogId && description) rows.push({department,type,pogId,description,setHours,imageRef,imageLink});
+ }
+ return dedupe(rows);
+}
+function parseStacked(text){
+ const raw=text.split(/\r?\n/).map(x=>safe(x)).filter(Boolean);
+ const rows=[]; let cur='';
+ for(let i=0;i<raw.length;i++){
+   const line=raw[i];
+   const known = matchKnownDept(line);
+   if(known){ cur=known; continue; }
+
+   const deptGuess = cleanDeptLabel(line);
+   const next = raw.slice(i+1,i+8);
+   if(isDeptGuess(line) && next.some(x=>isType(x)||isPogId(x))){
+     cur = deptGuess;
+     continue;
+   }
+
+   if(isType(line)){
+     let type=normalizeType(line), pogId='',desc='',hours='', imageLink=''; let j=i+1;
+     while(j<raw.length && !pogId){
+       const c = raw[j];
+       if(isPogId(c)) { pogId=c; j++; break; }
+       if(matchKnownDept(c) || (isDeptGuess(c) && raw.slice(j+1,j+5).some(x=>isType(x)||isPogId(x)))) break;
+       j++;
+     }
+     while(j<raw.length && !desc){
+       const c=raw[j];
+       if(matchKnownDept(c) || (isDeptGuess(c) && raw.slice(j+1,j+5).some(x=>isType(x)||isPogId(x)))) break;
+       if(!isPogId(c)&&!isHours(c)&&!isCount(c)&&!isNoise(c)&&!/^x\d/i.test(c)&&!/^[A-Z]\d+\(/i.test(c)&&!/^[\d']/.test(c)) desc=c;
+       j++;
+     }
+     while(j<raw.length && !hours){
+       const c=raw[j];
+       if(matchKnownDept(c) || (isDeptGuess(c) && raw.slice(j+1,j+5).some(x=>isType(x)||isPogId(x)))) break;
+       if(isHours(c)) { hours=c; j++; break; }
+       j++;
+     }
+     while(j<raw.length && !imageLink){
+       const c=raw[j];
+       if(/^https?:\/\//i.test(c)) { imageLink=c; break; }
+       if(matchKnownDept(c) || (isDeptGuess(c) && raw.slice(j+1,j+5).some(x=>isType(x)||isPogId(x))) || isType(c)) break;
+       j++;
+     }
+     const department=finalizeDept(cur,pogId);
+     if(department && pogId && desc) rows.push({department,type,pogId,description:desc,setHours:hours,imageRef:'',imageLink:''});
+   }
+ }
+ return dedupe(rows);
+}
+function parseGroupedWorkload(text){
+  const lines = text.split(/\r?\n/).map(x=>safe(x)).filter(Boolean);
+  const rows = [];
+  let currentDept = '';
+
+  function isDeptHeader(line){
+    return /\(\s*total\s+hours\s*:\s*[^)]*\)/i.test(line);
+  }
+
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+
+    if(isDeptHeader(line)){
+      currentDept = cleanDeptLabel(line);
+      continue;
+    }
+
+    if(!currentDept) continue;
+
+    if(isType(line)){
+      const type = normalizeType(line);
+      let pogId = '', description = '', setHours = '';
+      let j = i + 1;
+
+      while(j < lines.length && !pogId){
+        const c = lines[j];
+        if(isPogId(c)){ pogId = c; j++; break; }
+        if(isDeptHeader(c) || isType(c)) break;
+        j++;
+      }
+
+      while(j < lines.length && !description){
+        const c = lines[j];
+        if(isDeptHeader(c) || isType(c)) break;
+        if(!isNoise(c) && !isPogId(c) && !isHours(c) && !isCount(c) && c !== 'N/A' && !/^x\d/i.test(c) && !/^[A-Z]\d+\(/i.test(c) && !/^\d+'/.test(c) && !/sharepoint/i.test(c)){
+          description = c;
+        }
+        j++;
+      }
+
+      while(j < lines.length && !setHours){
+        const c = lines[j];
+        if(isDeptHeader(c) || isType(c)) break;
+        if(isHours(c)){ setHours = c; break; }
+        j++;
+      }
+
+      const department = finalizeDept(currentDept, pogId);
+      if(department && pogId && description){
+        rows.push({department, type, pogId, description, setHours, imageRef:'', imageLink:''});
+      }
+    }
+  }
+
+  return dedupe(rows);
+}
+function smartParse(text){
+  text=safe(text);
+  if(!text) return [];
+  const lines=text.split(/\r?\n/).filter(x=>safe(x));
+  const looksGrouped = lines.some(l=>/\(\s*total\s+hours\s*:/i.test(l));
+  let rows = looksGrouped ? parseGroupedWorkload(text) : [];
+  if(!rows.length){
+    const del=lines.some(l=>l.includes('\t')||l.split(',').length>=4);
+    rows=del?parseStructured(text):[];
+  }
+  if(!rows.length) rows=parseStacked(text);
+  return dedupe(rows);
+}
+function preview(rows){const box=$('parsePreview'); if(!rows.length){box.innerHTML='<span class="empty">No rows could be parsed. Add departments and prefix rules first, then try again. This importer now also handles grouped text copied from workload reports.</span>'; return;} box.innerHTML='<div class="muted" style="margin-bottom:8px">'+rows.length+' row(s) detected.</div><div class="tw"><table><thead><tr><th>Department</th><th>Type</th><th>POG ID</th><th>Description</th><th>Hours</th><th>Split rule</th></tr></thead><tbody>'+rows.slice(0,10).map(r=>'<tr><td>'+esc(r.department)+'</td><td>'+esc(r.type)+'</td><td>'+esc(r.pogId)+'</td><td>'+esc(r.description)+'</td><td>'+esc(r.setHours||'')+'</td><td>'+(Number(r.setHours||0)>8?'<span class="badge badgeWarn">Split Required</span>':'')+'</td></tr>').join('')+'</tbody></table></div>'}
+function getTeamHours(teamName, day){const tm=state.team.find(t=>t.name===teamName); return Number(tm?.hours?.[day]||0)}
+function planHours(p){const v = safe(p.assignedHours)!=='' ? Number(p.assignedHours) : Number(p.setHours||0); return isNaN(v)?0:v}
+function rebalanceSplitAssignments(pogId){
+  const rows = state.plans.filter(p=>p.pogId===pogId && isSplitRequired(p.setHours));
+  if(!rows.length) return;
+  rows.forEach(p=>{ if(typeof p.autoSplit === 'undefined') p.autoSplit = (safe(p.assignedHours)===''); });
+
+  const flexible = rows.filter(p=>p.autoSplit || safe(p.assignedHours)==='');
+  const manual = rows.filter(p=>!p.autoSplit && safe(p.assignedHours)!=='');
+  const setHours = Number(rows[0].setHours || 0);
+  const manualSum = manual.reduce((sum,p)=>sum + (Number(p.assignedHours || 0) || 0), 0);
+
+  if(rows.length === 1 && flexible.length === 1 && manualSum === 0){
+    flexible[0].assignedHours = '';
+    flexible[0].autoSplit = true;
+    rows.forEach(p=>{
+      const clean = safe(p.notes).replace(/(?:\s*\|\s*)?Split required/gi,'').trim();
+      p.notes = clean ? clean + ' | Split required' : 'Split required';
+    });
+    return;
+  }
+
+  const remaining = Math.max(0, +(setHours - manualSum).toFixed(2));
+  if(flexible.length){
+    const each = +(remaining / flexible.length).toFixed(2);
+    let running = 0;
+    flexible.forEach((p, idx)=>{
+      const value = idx === flexible.length - 1 ? +(remaining - running).toFixed(2) : each;
+      p.assignedHours = String(Math.max(0, value));
+      p.autoSplit = true;
+      running = +(running + value).toFixed(2);
+    });
+  }
+
+  const stillOpen = Math.max(0, +(setHours - totalAssignedForPog(pogId)).toFixed(2)) > 0;
+  rows.forEach(p=>{
+    const clean = safe(p.notes).replace(/(?:\s*\|\s*)?Split required/gi,'').trim();
+    p.notes = stillOpen ? (clean ? clean + ' | Split required' : 'Split required') : clean;
+  });
+}
+function rebalanceAllSplitAssignments(){
+  const ids = [...new Set(state.plans.filter(p=>isSplitRequired(p.setHours)).map(p=>p.pogId).filter(Boolean))];
+  ids.forEach(rebalanceSplitAssignments);
+}
+function dayTotal(teamName, day){ return +state.plans.filter(p=>p.teamMember===teamName && p.day===day).reduce((sum,p)=>sum+planHours(p),0).toFixed(2); }
+function overloadInfo(teamName, day){ const scheduled = getTeamHours(teamName, day); const totalPlanned = dayTotal(teamName, day); const overBy = Math.max(0, +(totalPlanned - scheduled).toFixed(2)); return {scheduled, totalPlanned:+totalPlanned.toFixed(2), overBy, overloaded: totalPlanned > scheduled && scheduled >= 0}; }
+function isSplitRequired(setHours){ return Number(setHours||0) > 8; }
+function totalAssignedForPog(pogId){
+  return +state.plans.filter(p=>p.pogId===pogId).reduce((sum,p)=>{
+    if(isSplitRequired(p.setHours) && safe(p.assignedHours)==='') return sum;
+    return sum + planHours(p);
+  },0).toFixed(2);
+}
+function remainingForPog(pogId, setHours){ return +(Number(setHours||0) - totalAssignedForPog(pogId)).toFixed(2); }
+function isPogAvailableForSelection(p){
+  const assigned = totalAssignedForPog(p.pogId);
+  const setHrs = Number(p.setHours || 0);
+  if(isSplitRequired(p.setHours)){
+    return assigned < setHrs;
+  }
+  return assigned <= 0;
+}
+function departmentTotalHours(dept){
+  return +state.pogs
+    .filter(p=>p.department===dept)
+    .reduce((sum,p)=>{
+      const remaining = remainingForPog(p.pogId, p.setHours);
+      return sum + Math.max(0, Number(remaining || 0));
+    }, 0)
+    .toFixed(1);
+}
+function selectedDepartmentValues(){ return [...document.querySelectorAll('#deptChecklist input[type=checkbox]:checked')].map(x=>x.value); }
+function selectedPogValues(){ return [...document.querySelectorAll('#pogChecklist input[type=checkbox]:checked')].map(x=>x.value); }
+function specialTasks(){
+  return [
+    {id:'PC', name:'Price Change (PC)', department:'Operations', type:'TASK'},
+    {id:'RFID', name:'RFID', department:'Operations', type:'TASK'}
+  ];
+}
+function selectedTaskValues(){ return [...document.querySelectorAll('#taskChecklist input[type=checkbox]:checked')].map(x=>x.value); }
+function taskHoursValue(taskId){
+  const el = document.getElementById('taskHours_' + taskId);
+  return el ? safe(el.value) : '';
+}
+function renderTaskChecklist(){
+  const wrap = $('taskChecklist');
+  if(!wrap) return;
+  wrap.innerHTML = specialTasks().map(t =>
+    '<label class="checkrow" style="display:grid;grid-template-columns:18px 1fr 80px;align-items:center;gap:10px">'
+    + '<input type="checkbox" value="'+esc(t.id)+'">'
+    + '<span><strong>'+esc(t.name)+'</strong><div class="small muted">Always available</div></span>'
+    + '<input id="taskHours_'+esc(t.id)+'" type="number" step="0.1" min="0" placeholder="hrs">'
+    + '</label>'
+  ).join('');
+  wrap.querySelectorAll('input').forEach(el=>el.addEventListener('change', updateBulkHint));
+}
+function renderDeptChecklist(){
+  const wrap = $('deptChecklist');
+  if(!state.departments.length){
+    wrap.innerHTML='<div class="empty">No departments yet.</div>';
+    return;
+  }
+  const hideZero = $('hideZeroDept') ? $('hideZeroDept').checked : false;
+  const depts = state.departments.filter(d=>{
+    const total = departmentTotalHours(d);
+    return !hideZero || total > 0;
+  });
+  if(!depts.length){
+    wrap.innerHTML='<div class="empty">No departments with remaining workload to show.</div>';
+    return;
+  }
+  wrap.innerHTML = depts.map(d=>{
+    const total = departmentTotalHours(d).toFixed(1).replace(/\.0$/,'');
+    return '<label class="checkrow"><input type="checkbox" value="'+esc(d)+'"><span>'+esc(d)+' ('+ total +' hrs)</span></label>';
+  }).join('');
+  wrap.querySelectorAll('input').forEach(cb=>cb.addEventListener('change', renderPogChecklist));
+}function renderPogChecklist(){
+  const wrap = $('pogChecklist');
+  const depts = selectedDepartmentValues();
+  const filtered = state.pogs
+    .filter(p => (!depts.length || depts.includes(p.department)) && isPogAvailableForSelection(p))
+    .sort((a,b)=>a.department.localeCompare(b.department)||disp(a).localeCompare(disp(b)));
+  if(!filtered.length){ wrap.innerHTML='<div class="empty">No available POGs for the selected departments. Fully covered split POGs are now hidden once remaining hours reach zero.</div>'; updateBulkHint(); return; }
+  wrap.innerHTML = filtered.map(p=>{
+    const rem = isSplitRequired(p.setHours)?remainingForPog(p.pogId,p.setHours):'';
+    const badge = isSplitRequired(p.setHours)?'<span class="badge badgeWarn">Split Required</span> ':'';
+    return '<label class="checkrow"><input type="checkbox" value="'+esc(p.pogId)+'"> <span><strong>'+esc(p.department)+'</strong> · '+esc(p.type)+' · '+esc(disp(p))+' <strong style="white-space:nowrap">['+esc(p.setHours||'0')+' hrs]</strong> '+badge+(rem!==''?'<span class="small muted"> Remaining '+esc(rem)+' hrs</span>':'')+'</span></label>';
+  }).join('');
+  wrap.querySelectorAll('input').forEach(cb=>cb.addEventListener('change', updateBulkHint));
+  updateBulkHint();
+}
+function renderSummary(){
+  const groups = {};
+  state.plans.forEach(p=>{ const key = p.day + '|' + p.teamMember; if(!groups[key]) groups[key] = overloadInfo(p.teamMember, p.day); });
+  const overloaded = Object.entries(groups).filter(([_,v])=>v.overloaded);
+  const box = $('summaryBox');
+  if(!overloaded.length){ box.innerHTML = '<span class="empty">No overload warnings yet.</span>'; return; }
+  box.innerHTML = overloaded.map(([key,v])=>{ const [day, team] = key.split('|'); return '<div style="margin-bottom:8px"><strong>* '+esc(day)+' - '+esc(team)+'</strong>: planned '+esc(v.totalPlanned)+' hrs vs scheduled '+esc(v.scheduled)+' hrs (over by '+esc(v.overBy)+' hrs)</div>'; }).join('');
+}
+function renderSplitSummary(){
+  const map = {};
+  state.pogs.filter(p=>isSplitRequired(p.setHours)).forEach(p=>{ const assigned = totalAssignedForPog(p.pogId); const remaining = +(Number(p.setHours||0)-assigned).toFixed(2); map[p.pogId] = {display:disp(p), type:p.type, setHours:Number(p.setHours||0), assigned, remaining}; });
+  const items = Object.values(map); const box = $('splitSummaryBox');
+  if(!items.length){ box.innerHTML = '<span class="empty">No split-required POGs assigned yet.</span>'; return; }
+  box.innerHTML = items.map(i=>{ const badge = i.remaining>0 ? '<span class="badge badgeWarn">Needs split</span>' : '<span class="badge badgeOk">Fully assigned</span>'; return '<div style="margin-bottom:8px"><strong>'+esc(i.type)+' - '+esc(i.display)+'</strong> - total '+esc(i.setHours)+' hrs, assigned '+esc(i.assigned)+' hrs, remaining '+esc(i.remaining)+' hrs '+badge+'</div>'; }).join('');
+}
+function updateBulkHint(){
+  const box=$('bulkHint'); box.style.display='none'; box.textContent='';
+  const day=safe($('pDay').value), team=safe($('pTeam').value), selectedIds=selectedPogValues(), taskIds=selectedTaskValues();
+  if(!day || !team || (!selectedIds.length && !taskIds.length)) return;
+  const selected = state.pogs.filter(p=>selectedIds.includes(p.pogId));
+  const pogProjected = +selected.reduce((sum,p)=>sum + (isSplitRequired(p.setHours)?0:Number(p.setHours||0)), 0).toFixed(2);
+  const taskProjected = +taskIds.reduce((sum,id)=>sum + Number(taskHoursValue(id)||0), 0).toFixed(2);
+  const scheduled = getTeamHours(team, day);
+  const dayTotalAfter = +(dayTotal(team,day)+pogProjected+taskProjected).toFixed(2);
+  const splitItems = selected.filter(p=>isSplitRequired(p.setHours));
+  const selectedTotal = +selected.reduce((sum,p)=>sum + Number(p.setHours||0), 0).toFixed(2);
+  let msgParts = [];
+  if(selectedIds.length) msgParts.push('Selected ' + selected.length + ' POG(s) totaling ' + selectedTotal + ' set hours.');
+  if(taskIds.length) msgParts.push('Selected ' + taskIds.length + ' task(s) totaling ' + taskProjected + ' hrs.');
+  if(splitItems.length) msgParts.push(splitItems.length + ' large POG(s) over 8 hrs still need manual split tracking after bulk add and will remain available until fully assigned.');
+  if(dayTotalAfter > scheduled && scheduled >= 0) msgParts.push('Warning: this bulk add would put ' + team + ' at ' + dayTotalAfter + ' hrs on ' + day + ' vs ' + scheduled + ' scheduled.');
+  box.style.display='block'; box.textContent=msgParts.join(' ');
+}
+function render(){
+ $('stTeam').textContent=state.team.length+' loaded'; $('stDept').textContent=state.departments.length+' loaded'; $('stPog').textContent=state.pogs.length+' loaded';
+ $('teamBody').innerHTML=state.team.length?state.team.map((m,i)=>{
+  const editing=!!m.editing;
+  if(editing){
+    return '<tr class="editingRow"><td><input value="'+esc(m.editName??m.name)+'" oninput="updateTeamField('+i+',\'name\',this.value)"></td>'
+      + DAYS.map(d=>'<td><input type="number" step="0.25" value="'+Number((m.editHours||m.hours||{})[d]||0)+'" oninput="updateTeamField('+i+',\''+d+'\',this.value)"></td>').join('')
+      + '<td>'+total(m.editHours||m.hours)+'</td>'
+      + '<td><button class="p" onclick="saveTeamEdit('+i+')">Save</button><button class="s" onclick="cancelTeamEdit('+i+')">Cancel</button><button class="d" onclick="delTeam('+i+')">Delete</button></td></tr>';
+  }
+  return '<tr><td>'+esc(m.name)+'</td>'+DAYS.map(d=>'<td>'+Number((m.hours||{})[d]||0)+'</td>').join('')+'<td>'+total(m.hours)+'</td><td><button class="s" onclick="editTeam('+i+')">Edit</button><button class="d" onclick="delTeam('+i+')">Delete</button></td></tr>';
+}).join(''):'<tr><td colspan="10" class="empty">No team members added yet.</td></tr>';
+ $('deptBody').innerHTML=state.departments.length?state.departments.map((d,i)=>'<tr><td>'+esc(d)+'</td><td>'+state.pogs.filter(p=>p.department===d).length+'</td><td><button class="d" onclick="delDept('+i+')">Delete</button></td></tr>').join(''):'<tr><td colspan="3" class="empty">No departments added yet.</td></tr>';
+ $('ruleBody').innerHTML=(state.rules||[]).length?(state.rules||[]).map((r,i)=>'<tr><td>'+esc(r.prefix)+'</td><td>'+esc(r.department)+'</td><td><button class="d" onclick="delRule('+i+')">Delete</button></td></tr>').join(''):'<tr><td colspan="3" class="empty">No rules added yet.</td></tr>';
+ $('pogBody').innerHTML=state.pogs.length?state.pogs.map((p,i)=>{
+  if(p.editing){
+    const deptOptions=['<option value="">Select department</option>'].concat(state.departments.map(d=>'<option value="'+esc(d)+'" '+(((p.editDepartment??p.department)===d)?'selected':'')+'>'+esc(d)+'</option>')).join('');
+    return '<tr class="editingPogRow">'
+      + '<td><select onchange="updatePogField('+i+',\'department\',this.value)">'+deptOptions+'</select></td>'
+      + '<td><select onchange="updatePogField('+i+',\'type\',this.value)"><option value="POG" '+(((p.editType??(p.type||'POG'))==='POG')?'selected':'')+'>POG</option><option value="REV" '+(((p.editType??(p.type||'POG'))==='REV')?'selected':'')+'>REV</option></select></td>'
+      + '<td><input value="'+esc(p.editPogId??p.pogId)+'" oninput="updatePogField('+i+',\'pogId\',this.value)"></td>'
+      + '<td><input value="'+esc(p.editDescription??p.description)+'" oninput="updatePogField('+i+',\'description\',this.value)"></td>'
+      + '<td><input type="number" step="0.1" value="'+esc(p.editSetHours??(p.setHours||''))+'" oninput="updatePogField('+i+',\'setHours\',this.value)"></td>'
+      + '<td>'+((isSplitRequired(p.editSetHours??p.setHours))?'<span class="badge badgeWarn">Split Required</span>':'')+'</td>'
+      + '<td><input value="'+esc(p.editImageRef??(p.imageRef||''))+'" oninput="updatePogField('+i+',\'imageRef\',this.value)"></td>'
+      + '<td><input value="'+esc(p.editImageLink??(p.imageLink||''))+'" oninput="updatePogField('+i+',\'imageLink\',this.value)"></td>'
+      + '<td>'+esc((p.editPogId??p.pogId)+' - '+(p.editDescription??p.description))+'</td>'
+      + '<td><button class="p" onclick="savePogEdit('+i+')">Save</button><button class="s" onclick="cancelPogEdit('+i+')">Cancel</button><button class="d" onclick="delPog('+i+')">Delete</button></td>'
+      + '</tr>';
+  }
+  return '<tr><td>'+esc(p.department)+'</td><td>'+esc(p.type||'POG')+'</td><td>'+esc(p.pogId)+'</td><td>'+esc(p.description)+'</td><td>'+esc(p.setHours||'')+'</td><td>'+(isSplitRequired(p.setHours)?'<span class="badge badgeWarn">Split Required</span>':'')+'</td><td>'+esc(p.imageRef||'')+'</td><td>'+(p.imageLink?'<a target="_blank" href="'+esc(p.imageLink)+'">Open link</a>':'')+'</td><td>'+esc(disp(p))+'</td><td><button class="s" onclick="editPog('+i+')">Edit</button><button class="d" onclick="delPog('+i+')">Delete</button></td></tr>';
+}).join(''):'<tr><td colspan="10" class="empty">No POGs in the library yet.</td></tr>';
+ $('planBody').innerHTML=state.plans.length?state.plans.map((p,i)=>Object.assign({_idx:i},p)).sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day)||a.teamMember.localeCompare(b.teamMember)||String(a.pogId||'').localeCompare(String(b.pogId||''))).map(p=>{const info=overloadInfo(p.teamMember,p.day); const rem=isSplitRequired(p.setHours)?remainingForPog(p.pogId,p.setHours):''; const splitOpen=isSplitRequired(p.setHours) && Number(rem||0)>0; const cls=info.overloaded?'over':(splitOpen?'split':''); const flag=(info.overloaded?'* ':'') + (splitOpen?'⚠':'' ); const quickBtn = splitOpen ? '<button class="s" onclick="openSplitAssignModal('+p._idx+')" style="margin-right:6px">Quick split</button>' : '';
+return '<tr class="'+cls+'"><td><strong>'+esc(flag)+'</strong></td><td>'+esc(p.day)+'</td><td>'+esc(p.teamMember)+'</td><td>'+esc(p.department)+'</td><td>'+esc(p.type||'POG')+'</td><td>'+esc(p.pogSelection)+'</td><td>'+esc(p.pogId||'')+'</td><td>'+esc(p.description||'')+'</td><td>'+esc(p.setHours||'')+'</td><td>'+esc(p.assignedHours||'')+'</td><td>'+esc(rem)+'</td><td>'+esc(info.scheduled)+'</td><td>'+esc(info.totalPlanned)+'</td><td>'+esc(p.status||'')+'</td><td>'+quickBtn+'<button class="d" onclick="delPlan('+p._idx+')">Delete</button></td></tr>'}).join(''):'<tr><td colspan="15" class="empty">No assignments yet.</td></tr>';
+ fillSel($('pDay'),DAYS,'Select day');
+ if(state.settings?.lastPlannerDay && DAYS.includes(state.settings.lastPlannerDay)) $('pDay').value=state.settings.lastPlannerDay;
+ fillSel($('boardDay'),DAYS,'Select board day');
+ $('boardDay').value = (state.settings?.boardDay && DAYS.includes(state.settings.boardDay)) ? state.settings.boardDay : ($('pDay').value || 'Monday');
+ $('boardMode').value = state.settings?.boardMode || 'daily';
+ renderTeamForSelectedDay(); fillSel($('pogDept'),state.departments,'Select department'); fillSel($('ruleDept'),state.departments,'Choose existing department');
+ renderPlannerBoard();
+ $('splitMode').value = state.settings?.splitMode || 'warn';
+ renderDeptChecklist(); renderPogChecklist(); renderTaskChecklist(); renderSummary(); renderSplitSummary(); if($('emailSubject') && !$('emailSubject').value) $('emailSubject').value='Weekly Workload Plan'; if($('emailIntro') && !$('emailIntro').value) $('emailIntro').value='Here is the workload plan for the upcoming week:';
+}
+
+function getBoardDay(){ return safe($('boardDay')?.value) || safe($('pDay')?.value) || state.settings?.boardDay || 'Monday'; }
+function boardGroupsForDay(day){
+  const names = getAvailableTeamNames(day);
+  return names.map(name=>{
+    const items = state.plans.map((p,i)=>Object.assign({_idx:i}, p)).filter(p=>p.day===day && p.teamMember===name);
+    return {name, items, info: overloadInfo(name, day)};
+  });
+}
+function renderDailyBoard(){
+  const day = getBoardDay();
+  const groups = boardGroupsForDay(day);
+  if(!groups.length){
+    $('plannerBoardMount').innerHTML = '<div class="empty">No scheduled team members for '+esc(day)+'.</div>';
+    return;
+  }
+  let out = '<div class="board-grid">';
+  groups.forEach(g=>{
+    out += '<div class="board-person"><div class="board-person-head"><div><div class="board-person-name">'+esc(g.name)+'</div><div class="board-meta">'+esc(String(g.info.totalPlanned).replace(/\.0$/,''))+' / '+esc(String(g.info.scheduled).replace(/\.0$/,''))+' hrs</div></div></div>';
+    out += '<div class="board-list board-dropzone" data-drop-day="'+esc(day)+'" data-drop-team="'+esc(g.name)+'">';
+    if(!g.items.length){
+      out += '<div class="board-empty-note">Drop workload here</div>';
+    }else{
+      out += g.items.map(p=>'<div class="board-item" draggable="true" data-plan-idx="'+p._idx+'"><div class="board-item-title">'+esc(p.description||p.pogSelection||p.pogId||'POG')+'</div><div class="board-item-sub">'+esc((p.department||'') + (p.type ? ' · '+p.type : '') + (p.setHours ? ' · '+p.setHours+' hrs' : ''))+'</div></div>').join('');
+    }
+    out += '</div></div>';
+  });
+  out += '</div><div class="board-help">Drag workload between team members to make quick changes.</div>';
+  $('plannerBoardMount').innerHTML = out;
+  attachBoardDnD();
+}
+function renderWeeklyBoard(){
+  let out = '<div class="board-grid">';
+  DAYS.forEach(day=>{
+    const groups = boardGroupsForDay(day);
+    out += '<div class="board-day-col"><div class="board-day-title">'+esc(day)+'</div>';
+    if(!groups.length){
+      out += '<div class="board-person"><div class="empty">No scheduled team members.</div></div>';
+    }else{
+      groups.forEach(g=>{
+        out += '<div class="board-person"><div class="board-person-head"><div><div class="board-person-name">'+esc(g.name)+'</div><div class="board-meta">'+esc(String(g.info.totalPlanned).replace(/\.0$/,''))+' / '+esc(String(g.info.scheduled).replace(/\.0$/,''))+' hrs</div></div></div>';
+        out += '<div class="board-list board-dropzone" data-drop-day="'+esc(day)+'" data-drop-team="'+esc(g.name)+'">';
+        if(!g.items.length){
+          out += '<div class="board-empty-note">Drop workload here</div>';
+        }else{
+          out += g.items.map(p=>'<div class="board-item" draggable="true" data-plan-idx="'+p._idx+'"><div class="board-item-title">'+esc(p.description||p.pogSelection||p.pogId||'POG')+'</div><div class="board-item-sub">'+esc((p.department||'') + (p.type ? ' · '+p.type : '') + (p.setHours ? ' · '+p.setHours+' hrs' : ''))+'</div></div>').join('');
+        }
+        out += '</div></div>';
+      });
+    }
+    out += '</div>';
+  });
+  out += '</div><div class="board-help">Drag workload between people or across days to make quick changes.</div>';
+  $('plannerBoardMount').innerHTML = out;
+  attachBoardDnD();
+}
+function updateBoardVisibility(){
+  const visible = !!state.settings?.boardVisible;
+  $('plannerBoardPanel').classList.toggle('board-hidden', !visible);
+  $('toggleBoard').textContent = visible ? 'Hide board' : 'Show board';
+}
+function renderPlannerBoard(){
+  updateBoardVisibility();
+  if(!state.settings?.boardVisible) return;
+  const mode = safe($('boardMode')?.value) || state.settings?.boardMode || 'daily';
+  if(mode === 'weekly') renderWeeklyBoard();
+  else renderDailyBoard();
+}
+
+function movePlanAssignment(idx,newDay,newTeam){
+  const row = state.plans[idx];
+  if(!row) return;
+  row.day = newDay;
+  row.teamMember = newTeam;
+  save(false);
+}
+function attachBoardDnD(){
+  const items = document.querySelectorAll('.board-item[draggable="true"]');
+  const zones = document.querySelectorAll('.board-dropzone');
+  items.forEach(item=>{
+    item.addEventListener('dragstart', e=>{
+      item.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', item.dataset.planIdx || '');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', ()=>{
+      item.classList.remove('dragging');
+      document.querySelectorAll('.dropzone-active').forEach(z=>z.classList.remove('dropzone-active'));
+    });
+  });
+  zones.forEach(zone=>{
+    zone.addEventListener('dragover', e=>{
+      e.preventDefault();
+      zone.classList.add('dropzone-active');
+      e.dataTransfer.dropEffect = 'move';
+    });
+    zone.addEventListener('dragleave', ()=>zone.classList.remove('dropzone-active'));
+    zone.addEventListener('drop', e=>{
+      e.preventDefault();
+      zone.classList.remove('dropzone-active');
+      const idx = Number(e.dataTransfer.getData('text/plain'));
+      if(Number.isNaN(idx)) return;
+      const newDay = zone.dataset.dropDay || '';
+      const newTeam = zone.dataset.dropTeam || '';
+      movePlanAssignment(idx,newDay,newTeam);
+    });
+  });
+}
+
+function addTeam(){const name=safe($('teamName').value); if(!name) return alert('Enter a team member name.'); if(state.team.some(t=>t.name.toLowerCase()===name.toLowerCase())) return alert('That team member already exists.'); const hours={Monday:Number($('mon').value||0),Tuesday:Number($('tue').value||0),Wednesday:Number($('wed').value||0),Thursday:Number($('thu').value||0),Friday:Number($('fri').value||0),Saturday:Number($('sat').value||0),Sunday:Number($('sun').value||0)}; state.team.push({name,hours}); $('teamName').value=''; ['mon','tue','wed','thu','fri','sat','sun'].forEach(id=>$(id).value=0); save()}
+function addDept(){const name=safe($('deptName').value).replace(/\s+/g,' '); if(!name) return alert('Enter a department name.'); if(state.departments.includes(name)) return alert('That department already exists.'); state.departments.push(name); state.departments.sort(); $('deptName').value=''; save()}
+function addRule(){ const prefix=safe($('rulePrefix').value).toUpperCase(); const existing=safe($('ruleDept').value); const typed=safe($('ruleDeptNew').value).replace(/\s+/g,' '); const department=typed || existing; if(!prefix||!department) return alert('Enter a prefix and choose or type a department.'); if(state.rules.some(r=>safe(r.prefix).toUpperCase()===prefix)) return alert('That prefix already exists.'); ensureDept(department); state.rules.push({prefix,department}); state.rules.sort((a,b)=>safe(a.prefix).localeCompare(safe(b.prefix))); $('rulePrefix').value=''; $('ruleDept').value=''; $('ruleDeptNew').value=''; save()}
+function addPog(){const department=safe($('pogDept').value), type=safe($('pogType').value)||'POG', pogId=safe($('pogId').value), description=safe($('pogDesc').value), setHours=safe($('pogHours').value), imageRef=safe($('imgRef').value), imageLink=safe($('imgLink').value); if(!department||!pogId||!description) return alert('Department, POG ID, and description are required.'); ensureDept(department); state.pogs.push({department,type,pogId,description,setHours,imageRef,imageLink}); ['pogId','pogDesc','pogHours','imgRef','imgLink'].forEach(id=>$(id).value=''); $('pogType').value='POG'; save()}
+function doPreview(){preview(smartParse($('rawBox').value))}
+function doImport(){const rows=smartParse($('rawBox').value); if(!rows.length) return alert('No rows could be parsed. Add departments and prefix rules first, then try again. This importer now also handles grouped text copied from workload reports.'); rows.forEach(r=>{ensureDept(r.department); state.pogs.push(r)}); $('rawBox').value=''; preview(rows); save(false); render(); show(rows.length+' POG row(s) imported.')}
+function unassignAllPogs(){
+  if(!confirm('Unassign all POGs from team members?')) return;
+  state.plans = [];
+  save(false);
+  show('All POG assignments cleared.');
+}
+function addBulkPlans(){
+ const day=safe($('pDay').value), teamMember=safe($('pTeam').value), status='Planned', notes=safe($('pNotes').value);
+ const ids=selectedPogValues(), taskIds=selectedTaskValues();
+ if(!day||!teamMember||(!ids.length && !taskIds.length)) return alert('Choose a day, team member, and at least one POG or task.');
+ if(getTeamHours(teamMember, day) <= 0) return alert(teamMember + ' is not scheduled on ' + day + '.');
+ const chosen=state.pogs.filter(p=>ids.includes(p.pogId));
+ let added=0;
+ for(const p of chosen){
+   let assignedHours='';
+   const row = {day,teamMember,department:p.department,type:p.type||'POG',pogSelection:disp(p),pogId:p.pogId,description:p.description,setHours:p.setHours,assignedHours,imageRef:p.imageRef||'',imageLink:p.imageLink||'',notes:(notes + (isSplitRequired(p.setHours)?(notes?' | ':'')+'Split required':'')).trim(),status};
+   if(isSplitRequired(p.setHours)) row.autoSplit = true;
+   state.plans.push(row);
+   if(isSplitRequired(p.setHours)) rebalanceSplitAssignments(p.pogId);
+   added++;
+ }
+ const taskMap = Object.fromEntries(specialTasks().map(t=>[t.id,t]));
+ for(const id of taskIds){
+   const task = taskMap[id];
+   if(!task) continue;
+   const hrs = taskHoursValue(id);
+   state.plans.push({
+     day,
+     teamMember,
+     department:task.department,
+     type:task.type,
+     pogSelection:task.name,
+     pogId:'',
+     description:task.name,
+     setHours:hrs,
+     assignedHours:hrs,
+     imageRef:'',
+     imageLink:'',
+     notes:notes,
+     status
+   });
+   added++;
+ }
+ save(false);
+ document.querySelectorAll('#pogChecklist input[type=checkbox], #taskChecklist input[type=checkbox]').forEach(x=>x.checked=false);
+ document.querySelectorAll('#taskChecklist input[type=number]').forEach(x=>x.value='');
+ $('pNotes').value='';
+ updateBulkHint();
+ show(added+' assignment(s) added.');
+}
+function boldText(str){
+  const map={'a':'𝗮','b':'𝗯','c':'𝗰','d':'𝗱','e':'𝗲','f':'𝗳','g':'𝗴','h':'𝗵','i':'𝗶','j':'𝗷','k':'𝗸','l':'𝗹','m':'𝗺','n':'𝗻','o':'𝗼','p':'𝗽','q':'𝗾','r':'𝗿','s':'𝘀','t':'𝘁','u':'𝘂','v':'𝘃','w':'𝘄','x':'𝘅','y':'𝘆','z':'𝘇','A':'𝗔','B':'𝗕','C':'𝗖','D':'𝗗','E':'𝗘','F':'𝗙','G':'𝗚','H':'𝗛','I':'𝗜','J':'𝗝','K':'𝗞','L':'𝗟','M':'𝗠','N':'𝗡','O':'𝗢','P':'𝗣','Q':'𝗤','R':'𝗥','S':'𝗦','T':'𝗧','U':'𝗨','V':'𝗩','W':'𝗪','X':'𝗫','Y':'𝗬','Z':'𝗭'};
+  return String(str).split('').map(ch=>map[ch]||ch).join('');
+}
+function fmtHours(n){ return (Math.round(Number(n||0)*10)/10).toString().replace(/\.0$/,''); }
+function genEmail(){
+  const plans=[...state.plans].sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day)||a.teamMember.localeCompare(b.teamMember)||String(a.pogId||'').localeCompare(String(b.pogId||'')));
+  const subject = safe($('emailSubject')?.value) || 'Weekly Workload Plan';
+  const intro = safe($('emailIntro')?.value) || 'Here is the workload plan for the upcoming week:';
+  const out=['Subject: ' + subject,'',intro,''];
+
+  if(!plans.length){
+    out.push('No assignments have been added yet.');
+    $('emailOut').value=out.join('\n');
+    return;
+  }
+
+  DAYS.forEach(day=>{
+    const dayPlans=plans.filter(p=>p.day===day);
+    if(!dayPlans.length) return;
+
+    out.push(day.toUpperCase());
+    out.push('');
+
+    const groups={};
+    dayPlans.forEach(p=>{
+      if(!groups[p.teamMember]) groups[p.teamMember]=[];
+      groups[p.teamMember].push(p);
+    });
+
+    Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(name=>{
+      const personPlans=groups[name];
+      const itemText = personPlans.map(p=>{
+        const label = safe(p.description||p.pogSelection||p.pogId||'Task');
+        const hrs = planHours(p);
+        return hrs>0 ? label + ' (' + fmtHours(hrs) + ' hrs)' : label;
+      }).join(' / ');
+      const totalHours = personPlans.reduce((sum,p)=>sum+planHours(p),0);
+      out.push('• ' + name + ' – ' + itemText + ' | Total: ' + fmtHours(totalHours) + ' hrs');
+    });
+
+    out.push('');
+  });
+
+  out.push('Let me know if any assignments need to be adjusted.');
+  $('emailOut').value=out.join('\n');
+}
+async function copyEmailDraft(){
+  if(!$('emailOut').value.trim()) genEmail();
+  try{
+    await navigator.clipboard.writeText($('emailOut').value);
+    show('Email copied.');
+  }catch(e){
+    alert('Copy did not work here. You can still select and copy manually.');
+  }
+}
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='pog-workload-planner-backup.json'; a.click(); URL.revokeObjectURL(a.href)}
+function importData(file){const r=new FileReader(); r.onload=()=>{try{const d=JSON.parse(r.result); state={team:Array.isArray(d.team)?d.team:[],departments:Array.isArray(d.departments)?d.departments:[],rules:Array.isArray(d.rules)?d.rules:[],pogs:Array.isArray(d.pogs)?d.pogs:[],plans:Array.isArray(d.plans)?d.plans:[],settings:d.settings||{splitMode:'warn'}}; save(false); show('Data imported.')}catch(e){alert('That file could not be imported.')}}; r.readAsText(file)}
+function editPog(i){
+  const p=state.pogs[i];
+  p.editing=true;
+  p.editDepartment=p.department;
+  p.editType=p.type||'POG';
+  p.editPogId=p.pogId;
+  p.editDescription=p.description;
+  p.editSetHours=p.setHours;
+  p.editImageRef=p.imageRef||'';
+  p.editImageLink=p.imageLink||'';
+  render();
+}
+function updatePogField(i,key,val){
+  const p=state.pogs[i];
+  if(!p.editing) return;
+  if(key==='department') p.editDepartment=val;
+  else if(key==='type') p.editType=val;
+  else if(key==='pogId') p.editPogId=val;
+  else if(key==='description') p.editDescription=val;
+  else if(key==='setHours') p.editSetHours=val;
+  else if(key==='imageRef') p.editImageRef=val;
+  else if(key==='imageLink') p.editImageLink=val;
+}
+function savePogEdit(i){
+  const p=state.pogs[i];
+  const department=safe(p.editDepartment);
+  const type=safe(p.editType)||'POG';
+  const pogId=safe(p.editPogId);
+  const description=safe(p.editDescription);
+  if(!department||!pogId||!description){
+    alert('Department, type, POG ID, and description are required.');
+    return;
+  }
+  ensureDept(department);
+  p.department=department;
+  p.type=type;
+  p.pogId=pogId;
+  p.description=description;
+  p.setHours=safe(p.editSetHours);
+  p.imageRef=safe(p.editImageRef);
+  p.imageLink=safe(p.editImageLink);
+  delete p.editing; delete p.editDepartment; delete p.editType; delete p.editPogId; delete p.editDescription; delete p.editSetHours; delete p.editImageRef; delete p.editImageLink;
+  save();
+}
+function cancelPogEdit(i){
+  const p=state.pogs[i];
+  delete p.editing; delete p.editDepartment; delete p.editType; delete p.editPogId; delete p.editDescription; delete p.editSetHours; delete p.editImageRef; delete p.editImageLink;
+  render();
+}
+function editTeam(i){
+  const m=state.team[i];
+  m.editing=true;
+  m.editName=m.name;
+  m.editHours={...(m.hours||{})};
+  render();
+}
+function updateTeamField(i,key,val){
+  const m=state.team[i];
+  if(!m.editing) return;
+  if(key==='name'){
+    m.editName=val;
+  } else {
+    m.editHours=m.editHours||{...(m.hours||{})};
+    m.editHours[key]=Number(val||0);
+  }
+}
+function saveTeamEdit(i){
+  const m=state.team[i];
+  const newName=safe(m.editName);
+  if(!newName){
+    alert('Name cannot be blank.');
+    return;
+  }
+  if(state.team.some((t,idx)=>idx!==i && safe(t.name).toLowerCase()===newName.toLowerCase())){
+    alert('Another team member already has that name.');
+    return;
+  }
+  m.name=newName;
+  m.hours={...(m.editHours||m.hours||{})};
+  delete m.editing;
+  delete m.editName;
+  delete m.editHours;
+  save();
+}
+function cancelTeamEdit(i){
+  const m=state.team[i];
+  delete m.editing;
+  delete m.editName;
+  delete m.editHours;
+  render();
+}
+function delTeam(i){state.team.splice(i,1); save()} function delDept(i){const d=state.departments[i]; if((state.pogs.some(p=>p.department===d)||state.plans.some(p=>p.department===d)||(state.rules||[]).some(r=>r.department===d))&&!confirm('This department is linked to rules, POGs, or assignments. Delete anyway?')) return; state.departments.splice(i,1); save()} function delRule(i){state.rules.splice(i,1); save()} function delPog(i){state.pogs.splice(i,1); save()} 
+let splitModalState = { planIdx:null, pogId:'', day:'', description:'' };
+
+function getAvailableSplitPeople(day, pogId, currentTeam){
+  const available = getAvailableTeamNames(day);
+  const alreadyAssigned = new Set(
+    state.plans
+      .filter(p => p.day===day && p.pogId===pogId)
+      .map(p => p.teamMember)
+  );
+  return available.filter(name => name !== currentTeam && !alreadyAssigned.has(name));
+}
+function openSplitAssignModal(planIdx){
+  const row = state.plans[planIdx];
+  if(!row) return;
+  const remaining = remainingForPog(row.pogId, row.setHours);
+  if(!(isSplitRequired(row.setHours) && Number(remaining||0) > 0)) return;
+
+  splitModalState = {
+    planIdx: planIdx,
+    pogId: row.pogId || '',
+    day: row.day || '',
+    description: row.description || row.pogSelection || row.pogId || 'POG'
+  };
+
+  const people = getAvailableSplitPeople(row.day, row.pogId, row.teamMember);
+  const sel = $('splitAssignSelect');
+  sel.innerHTML = '<option value="">Select team member</option>' + people.map(name => '<option value="'+esc(name)+'">'+esc(name)+'</option>').join('');
+  $('splitModalInfo').textContent = row.day + ' • ' + splitModalState.description + ' • Remaining ' + String(remaining).replace(/\.0$/,'') + ' hrs';
+  $('splitModal').style.display = 'flex';
+
+  if(!people.length){
+    $('splitModalInfo').textContent = row.day + ' • ' + splitModalState.description + ' • No other scheduled team members are available for this split.';
+  }
+}
+function closeSplitAssignModal(){
+  $('splitModal').style.display = 'none';
+  splitModalState = { planIdx:null, pogId:'', day:'', description:'' };
+}
+function confirmSplitAssign(){
+  const target = safe($('splitAssignSelect').value);
+  if(!target) return alert('Select a team member.');
+  const source = state.plans[splitModalState.planIdx];
+  if(!source) return closeSplitAssignModal();
+
+  const noteBase = safe(source.notes).replace(/(?:\s*\|\s*)?Split required/gi,'').trim();
+  const newRow = {
+    day: source.day,
+    teamMember: target,
+    department: source.department,
+    type: source.type || 'POG',
+    pogSelection: source.pogSelection,
+    pogId: source.pogId,
+    description: source.description,
+    setHours: source.setHours,
+    assignedHours: '',
+    imageRef: source.imageRef || '',
+    imageLink: source.imageLink || '',
+    notes: noteBase ? noteBase + ' | Split required' : 'Split required',
+    status: source.status || 'Planned',
+    autoSplit: true
+  };
+  state.plans.push(newRow);
+  rebalanceSplitAssignments(source.pogId);
+  save(false);
+  closeSplitAssignModal();
+  show('Another person added to split.');
+}
+
+function delPlan(i){
+  const row = state.plans[i];
+  const pogId = row ? row.pogId : '';
+  state.plans.splice(i,1);
+  if(pogId) rebalanceSplitAssignments(pogId);
+  save();
+}
+document.querySelectorAll('.tabbtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('a')); document.querySelectorAll('.tab').forEach(x=>x.classList.remove('a')); b.classList.add('a'); $(b.dataset.t).classList.add('a')});
+if($('toggleBoard')) $('toggleBoard').onclick=()=>{state.settings=state.settings||{}; state.settings.boardVisible=!state.settings.boardVisible; save(false);};
+if($('boardMode')) $('boardMode').onchange=()=>{state.settings=state.settings||{}; state.settings.boardMode=$('boardMode').value; renderPlannerBoard(); localStorage.setItem(K,JSON.stringify(state));};
+if($('boardDay')) $('boardDay').onchange=()=>{state.settings=state.settings||{}; state.settings.boardDay=$('boardDay').value; renderPlannerBoard(); localStorage.setItem(K,JSON.stringify(state));};
+$('pDay').onchange=()=>{state.settings=state.settings||{}; state.settings.lastPlannerDay=$('pDay').value; renderTeamForSelectedDay(); updateBulkHint(); localStorage.setItem(K,JSON.stringify(state)); if(!$('boardDay').value) $('boardDay').value=$('pDay').value; renderPlannerBoard();};
+$('hideZeroDept').onchange=()=>renderDeptChecklist();
+if($('unassignAll')) $('unassignAll').onclick=unassignAllPogs;
+$('splitAssignConfirm').onclick=confirmSplitAssign; $('splitAssignCancel').onclick=closeSplitAssignModal; $('splitModal').onclick=(e)=>{ if(e.target.id==='splitModal') closeSplitAssignModal(); };
+$('addTeam').onclick=addTeam; $('addDept').onclick=addDept; $('addRule').onclick=addRule; $('previewRuleBulk').onclick=previewRuleBulkImport; $('importRuleBulk').onclick=importRuleBulkText; $('addPog').onclick=addPog; $('previewBtn').onclick=doPreview; $('smartImport').onclick=doImport; $('clearLib').onclick=()=>{if(confirm('Clear the whole POG library?')){state.pogs=[]; save()}}; $('sampleBtn').onclick=()=>{[{department:'Amplified Gifting Fixtures',type:'POG',pogId:'J1070TX',description:'Cart 2: Lego Botanicals',setHours:'9.1',imageRef:'J1070TX.png',imageLink:''},{department:'Amplified Gifting Fixtures',type:'REV',pogId:'J1070UW',description:'Cart 3: Spring Floral',setHours:'3.1',imageRef:'J1070UW.png',imageLink:''},{department:'Checklanes',type:'POG',pogId:'J1529O0',description:'Core Power + Zbar 4/5',setHours:'1.5',imageRef:'J1529O0.png',imageLink:''}].forEach(p=>{ensureDept(p.department); state.pogs.push(p)}); save(false); show('Sample data loaded.')};
+$('addBulkPlans').onclick=addBulkPlans; $('clearPlan').onclick=()=>{document.querySelectorAll('#deptChecklist input,#pogChecklist input,#taskChecklist input[type=checkbox]').forEach(x=>x.checked=false); document.querySelectorAll('#taskChecklist input[type=number]').forEach(x=>x.value=''); $('pNotes').value=''; updateBulkHint();}; if($('hideZeroDept')) $('hideZeroDept').onchange=renderDeptChecklist; $('pDay').onchange=()=>{renderTeamForSelectedDay(); updateBulkHint();}; $('pTeam').onchange=updateBulkHint; $('splitMode').onchange=()=>save(false); if($('genEmail')) $('genEmail').onclick=genEmail; if($('copyEmail')) $('copyEmail').onclick=copyEmailDraft; $('exportBtn').onclick=exportData; $('importFile').onchange=e=>{if(e.target.files&&e.target.files[0]) importData(e.target.files[0])}; $('resetAll').onclick=()=>{if(confirm('Reset everything in the app?')){state={team:[],departments:[],rules:[],pogs:[],plans:[],settings:{splitMode:'warn'}}; save(false); $('parsePreview').innerHTML='Nothing parsed yet.'; show('Everything was reset.')}}; window.delTeam=delTeam; window.delDept=delDept; window.delRule=delRule; window.delPog=delPog; window.delPlan=delPlan;
+load(); render();
+
+function parseRuleBulkText(text){
+  const lines = safe(text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const rows = [];
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+    let prefix = '';
+    let department = '';
+    const normalized = safe(line).replace(/[–—]/g,'-').trim();
+
+    // stacked format:
+    // J107
+    // Amplified Gifting Fixtures
+    // Delete
+    if(/^[A-Z]\d{3}$/i.test(normalized) && i + 1 < lines.length){
+      prefix = normalized.toUpperCase();
+      department = safe(lines[i+1]).replace(/\s+/g,' ').trim();
+      if(i + 2 < lines.length && /^delete$/i.test(safe(lines[i+2]).trim())) i += 2;
+      else i += 1;
+    } else if(normalized.includes('\t')){
+      const parts = normalized.split('\t').map(x=>safe(x).trim()).filter(Boolean);
+      prefix = (parts[0] || '').toUpperCase();
+      department = parts.slice(1).join(' ').replace(/\s+/g,' ').trim();
+    } else {
+      const separators = ['->', ':', ',', ' - '];
+      let matched = false;
+      for(const sep of separators){
+        if(normalized.includes(sep)){
+          const parts = normalized.split(sep).map(x=>safe(x).trim()).filter(Boolean);
+          if(parts.length >= 2){
+            prefix = (parts[0] || '').toUpperCase();
+            department = parts.slice(1).join(' ').replace(/\s+/g,' ').trim();
+            matched = true;
+            break;
+          }
+        }
+      }
+      if(!matched){
+        const m = normalized.match(/^([A-Z]\d{3})\s+(.+)$/i);
+        if(m){
+          prefix = m[1].toUpperCase();
+          department = safe(m[2]).replace(/\s+/g,' ').trim();
+        }
+      }
+    }
+
+    department = department.replace(/\bdelete\b$/i,'').replace(/\s+/g,' ').trim();
+    if(prefix && department && /^[A-Z]\d{3}$/i.test(prefix) && !/^delete$/i.test(department)){
+      rows.push({prefix, department});
+    }
+  }
+
+  const deduped = [];
+  const seen = new Set();
+  rows.forEach(r=>{
+    const key = r.prefix.toUpperCase();
+    if(seen.has(key)) return;
+    seen.add(key);
+    deduped.push({prefix:r.prefix, department:r.department});
+  });
+  return deduped;
+}
+
+function previewRuleBulkImport(){
+  const box = $('ruleBulkPreview');
+  if(!box) return;
+  const rows = parseRuleBulkText($('ruleBulkBox').value);
+  if(!rows.length){
+    box.innerHTML = '<span class="empty">No rules detected. Paste one rule per line, or use stacked prefix / department / Delete format.</span>';
+    return;
+  }
+  box.innerHTML = '<div class="small muted" style="margin-bottom:8px">'+rows.length+' rule(s) detected.</div>'
+    + '<div class="tw"><table><thead><tr><th>Prefix</th><th>Department</th></tr></thead><tbody>'
+    + rows.map(r=>'<tr><td>'+esc(r.prefix)+'</td><td>'+esc(r.department)+'</td></tr>').join('')
+    + '</tbody></table></div>';
+}
+
+function importRuleBulkText(){
+  const rows = parseRuleBulkText($('ruleBulkBox').value);
+  if(!rows.length){
+    alert('No rules detected. Paste one rule per line, or use the stacked prefix / department / Delete format.');
+    return;
+  }
+  let processed = 0;
+  for(const row of rows){
+    ensureDept(row.department);
+    const idx = (state.rules || []).findIndex(r=>safe(r.prefix).toUpperCase()===row.prefix.toUpperCase());
+    if(idx >= 0){
+      state.rules[idx].department = row.department;
+    } else {
+      state.rules.push({prefix:row.prefix, department:row.department});
+    }
+    processed++;
+  }
+  state.rules.sort((a,b)=>safe(a.prefix).localeCompare(safe(b.prefix)));
+  $('ruleBulkPreview').innerHTML = '<div class="small muted">Import complete. '+processed+' rule(s) processed.</div>';
+  $('ruleBulkBox').value = '';
+  save(false);
+  render(); show(processed + ' rule(s) processed.');
+}
+
+setTimeout(()=>{
+  if($('previewRuleBulk')) $('previewRuleBulk').onclick = previewRuleBulkImport;
+  if($('importRuleBulk')) $('importRuleBulk').onclick = importRuleBulkText;
+}, 0);
+
+
+function generateReport(){
+  const plans=[...state.plans].sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day)||a.teamMember.localeCompare(b.teamMember)||String(a.pogId||'').localeCompare(String(b.pogId||'')));
+  let out='<div class="report-wrap">';
+  DAYS.forEach(day=>{
+    const dayPlans=plans.filter(p=>p.day===day);
+    if(!dayPlans.length) return;
+    out += '<div class="report-day"><h3>'+day+'</h3>';
+    const groups={};
+    dayPlans.forEach(p=>{
+      if(!groups[p.teamMember]) groups[p.teamMember]=[];
+      groups[p.teamMember].push(p);
+    });
+    Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(name=>{
+      const items=groups[name];
+      const total=items.reduce((s,p)=>s+planHours(p),0);
+      out += '<div class="report-person"><h4>'+name+'</h4>';
+      out += '<table class="report-table"><thead><tr><th>POG Image</th><th>Description</th><th>Set Hours</th></tr></thead><tbody>';
+      items.forEach(p=>{
+        out += '<tr><td>'+(p.pogId||p.imageRef||'')+'</td><td>'+(p.description||p.pogSelection||'')+'</td><td>'+(p.setHours||'')+'</td></tr>';
+      });
+      out += '</tbody></table><div class="report-total">Total hours: '+total.toFixed(1).replace(/\.0$/,'')+'</div></div>';
+    });
+    out += '</div>';
+  });
+  out += '</div>';
+  document.getElementById('reportOutput').innerHTML = out === '<div class="report-wrap"></div>' ? '<span class="empty">No planner rows yet.</span>' : out;
+}
+function printReport(){
+  generateReport();
+  const content=document.getElementById('reportOutput').innerHTML;
+  const w=window.open('','_blank');
+  if(!w){ alert('Pop-up blocked. Please allow pop-ups to print.'); return; }
+  w.document.write('<html><head><title>Work Report</title><style>body{font-family:Arial,sans-serif;padding:24px;background:#f7f5f0;color:#22312a}.report-day{padding:18px;border:1px solid #ded7cb;border-radius:18px;background:#fff;margin-bottom:18px}h3{margin:0 0 12px;color:#2f4f38}h4{margin:0 0 8px;color:#3f5f49}.report-table{width:100%;border-collapse:collapse}th,td{border:1px solid #d8d2c6;padding:10px 12px;text-align:left}th{background:#4f7258;color:#fff}.report-total{margin-top:8px;font-weight:700;color:#2f4f38}</style></head><body>'+content+'</body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+setTimeout(()=>{
+  const g=document.getElementById('genReport'); if(g) g.onclick=generateReport;
+  const p=document.getElementById('printReport'); if(p) p.onclick=printReport;
+},0);
+</script></body></html>
