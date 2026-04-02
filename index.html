@@ -425,8 +425,8 @@ Cart 2: Lego Botanicals
 3.1
 54
 See adjacency'></textarea><div class='muted' style='margin-top:6px'>Also supports tab-separated, comma-separated, and grouped workload report text.</div></div><div class='c12 actions'><button class='p' id='smartImport' onclick='doImport()'>Smart Import</button><button class='s' id='previewBtn' onclick='doPreview()'>Preview Parse</button><button class='s' id='sampleBtn'>Load sample data</button><button class='d' id='clearLib'>Clear library</button></div><div class='c12'><label>Parse preview</label><div id='parsePreview' class='preview empty'>Nothing parsed yet.</div></div></div></div>
-<div class='card'><h3 style='margin-top:0'>Add one POG manually</h3><div class='grid'><div class='c3'><label>Department</label><select id='pogDept'></select></div><div class='c2'><label>Type</label><select id='pogType'><option value='POG'>POG</option><option value='REV'>REV</option><option value='SPL'>SPL</option></select></div><div class='c2'><label>POG ID</label><input id='pogId' placeholder='J1070TX'></div><div class='c3'><label>Description</label><input id='pogDesc' placeholder='Cart 2: Lego Botanicals'></div><div class='c2'><label>Set Hours</label><input id='pogHours' type='number' step='0.1'></div><div class='c3'><label>Image Ref</label><input id='imgRef'></div><div class='c6'><label>Image Link</label><input id='imgLink'></div><div class='c3 actions' style='align-items:end'><button class='p' id='addPog'>Add POG</button></div></div></div>
-<div class='card tw'><table><thead><tr><th>Department</th><th>Type</th><th>POG ID</th><th>Description</th><th>Hours</th><th>Split Rule</th><th>Image Ref</th><th>Image Link</th><th>Display</th><th>Actions</th></tr></thead><tbody id='pogBody'></tbody></table></div></section>
+<div class='card'><h3 style='margin-top:0'>Add one POG manually</h3><div class='grid'><div class='c3'><label>Department</label><select id='pogDept'></select></div><div class='c2'><label>Type</label><select id='pogType'><option value='POG'>POG</option><option value='REV'>REV</option><option value='SPL'>SPL</option></select></div><div class='c2'><label>POG ID</label><input id='pogId' placeholder='J1070TX'></div><div class='c3'><label>Description</label><input id='pogDesc' placeholder='Cart 2: Lego Botanicals'></div><div class='c2'><label>Set Hours</label><input id='pogHours' type='number' step='0.1'></div><div class='c2'><label>POG Ready</label><input id='pogReady' placeholder='91'></div><div class='c3'><label>Location</label><input id='pogLocation' placeholder='G2(1)'></div><div class='c3'><label>Image Ref</label><input id='imgRef'></div><div class='c6'><label>Image Link</label><input id='imgLink'></div><div class='c3 actions' style='align-items:end'><button class='p' id='addPog'>Add POG</button></div></div></div>
+<div class='card tw'><table><thead><tr><th>Department</th><th>Type</th><th>POG ID</th><th>Description</th><th>Hours</th><th>POG Ready</th><th>Location</th><th>Split Rule</th><th>Image Ref</th><th>Image Link</th><th>Display</th><th>Actions</th></tr></thead><tbody id='pogBody'></tbody></table></div></section>
 
 <section id='plan' class='tab'><div class='card'><h2 style='margin-top:0'>Planner board</h2>
 <div class='board-toolbar'>
@@ -523,6 +523,28 @@ function isNoise(s){
     'pog % ready','intended location','salesfloor location','footage','sharepointopens in a new window','sharepoint'
   ].includes(t) || /sharepoint/i.test(t);
 }
+function isPercentLike(s){
+  const t = safe(s);
+  return /^\d{1,3}$/.test(t) && Number(t) >= 0 && Number(t) <= 100;
+}
+function isLocationLike(s){
+  const t = safe(s);
+  return /^([A-Z]\d+\(\d+\)|CL\d+\(\d+\)|F\d+\(\d+\)|E\d+\(\d+\)|G\d+\(\d+\)|X\d+\(\d+\))$/i.test(t);
+}
+function isDescriptionCandidate(s){
+  const t = safe(s);
+  return !!t
+    && !isNoise(t)
+    && !isPogId(t)
+    && !isHours(t)
+    && !isCount(t)
+    && !isPercentLike(t)
+    && t !== 'N/A'
+    && !/^x\d/i.test(t)
+    && !isLocationLike(t)
+    && !/^[\d']/.test(t)
+    && /[A-Za-z]/.test(t);
+}
 function isPogId(s){const t=safe(s); return /^[A-Z0-9]{5,12}$/i.test(t)&&/[A-Z]/i.test(t)&&/\d/.test(t)&&!isType(t)}
 function cleanDeptLabel(s){ return safe(s).replace(/\s*\(\s*total\s+hours\s*:\s*[^)]*\)/i,'').replace(/\s+/g,' ').trim(); }
 function matchKnownDept(s){
@@ -543,12 +565,12 @@ function dedupe(rows){const seen=new Set(); return rows.filter(r=>{const k=[r.de
 function finalizeDept(department,pogId){return matchRuleByPogId(pogId) || matchKnownDept(department) || cleanDeptLabel(department)}
 function parseStructured(text){
  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); if(!lines.length) return []; let start=0,map=null; const first=parseLine(lines[0]).map(safe), low=first.map(x=>x.toLowerCase());
- if(first.length>=4 && low.some(x=>x.includes('dept')||x=='department'||x=='pog id'||x.includes('description')||x.includes('hours'))){map={department:low.findIndex(x=>x.includes('dept')||x=='department'), type:low.findIndex(x=>x=='type'||x.includes('pog/rev')||x.includes('pog type')), pogId:low.findIndex(x=>x.includes('pog id')||x=='pogid'||x=='id'), description:low.findIndex(x=>x.includes('description')||x=='desc'), setHours:low.findIndex(x=>x.includes('hour')), imageRef:low.findIndex(x=>x.includes('image ref')), imageLink:low.findIndex(x=>x.includes('image link')||x.includes('url')||x.includes('link'))}; start=1;}
+ if(first.length>=4 && low.some(x=>x.includes('dept')||x=='department'||x=='pog id'||x.includes('description')||x.includes('hours'))){map={department:low.findIndex(x=>x.includes('dept')||x=='department'), type:low.findIndex(x=>x=='type'||x.includes('pog/rev')||x.includes('pog type')), pogId:low.findIndex(x=>x.includes('pog id')||x=='pogid'||x=='id'), description:low.findIndex(x=>x.includes('description')||x=='desc'), setHours:low.findIndex(x=>x.includes('hour')), pogReady:low.findIndex(x=>x.includes('ready')), location:low.findIndex(x=>x.includes('location')||x.includes('salesfloor')), imageRef:low.findIndex(x=>x.includes('image ref')), imageLink:low.findIndex(x=>x.includes('image link')||x.includes('url')||x.includes('link'))}; start=1;}
  const rows=[]; 
  for(let i=start;i<lines.length;i++){
    const p=parseLine(lines[i]).map(safe); if(p.length<3) continue;
-   let department='', type='POG', pogId='', description='', setHours='', imageRef='', imageLink='';
-   if(map){ department=p[map.department]||''; if(map.type>=0) type=(p[map.type]||'POG').toUpperCase(); pogId=p[map.pogId]||''; description=p[map.description]||''; setHours=p[map.setHours]||''; if(map.imageRef>=0) imageRef=p[map.imageRef]||''; if(map.imageLink>=0) imageLink=p[map.imageLink]||''; }
+   let department='', type='POG', pogId='', description='', setHours='', pogReady='', location='', imageRef='', imageLink='';
+   if(map){ department=p[map.department]||''; if(map.type>=0) type=(p[map.type]||'POG').toUpperCase(); pogId=p[map.pogId]||''; description=p[map.description]||''; setHours=p[map.setHours]||''; if(map.pogReady>=0) pogReady=p[map.pogReady]||''; if(map.location>=0) location=p[map.location]||''; if(map.imageRef>=0) imageRef=p[map.imageRef]||''; if(map.imageLink>=0) imageLink=p[map.imageLink]||''; }
    else {
      const typeCol = p.findIndex(x=>isType(x)); if(typeCol>=0) type=normalizeType(p[typeCol]);
      const idCol = p.findIndex(x=>isPogId(x)); if(idCol>=0) pogId=p[idCol];
@@ -558,7 +580,7 @@ function parseStructured(text){
      if(!department && p[0] && !isType(p[0]) && !isPogId(p[0]) && !isHours(p[0])) department=p[0];
    }
    department=finalizeDept(department,pogId); type=normalizeType(type||'POG');
-   if(department && pogId && description) rows.push({department,type,pogId,description,setHours,imageRef,imageLink});
+   if(department && pogId && description) rows.push({department,type,pogId,description,setHours,pogReady,location,imageRef,imageLink});
  }
  return dedupe(rows);
 }
@@ -578,7 +600,7 @@ function parseStacked(text){
    }
 
    if(isType(line)){
-     let type=normalizeType(line), pogId='',desc='',hours='', imageLink=''; let j=i+1;
+     let type=normalizeType(line), pogId='',desc='',hours='', pogReady='', location='', imageLink=''; let j=i+1;
      while(j<raw.length && !pogId){
        const c = raw[j];
        if(isPogId(c)) { pogId=c; j++; break; }
@@ -588,7 +610,7 @@ function parseStacked(text){
      while(j<raw.length && !desc){
        const c=raw[j];
        if(matchKnownDept(c) || (isDeptGuess(c) && raw.slice(j+1,j+5).some(x=>isType(x)||isPogId(x)))) break;
-       if(!isPogId(c)&&!isHours(c)&&!isCount(c)&&!isNoise(c)&&!/^x\d/i.test(c)&&!/^[A-Z]\d+\(/i.test(c)&&!/^[\d']/.test(c)) desc=c;
+       if(isDescriptionCandidate(c)) desc=c;
        j++;
      }
      while(j<raw.length && !hours){
@@ -597,14 +619,16 @@ function parseStacked(text){
        if(isHours(c)) { hours=c; j++; break; }
        j++;
      }
-     while(j<raw.length && !imageLink){
+     while(j<raw.length && (!pogReady || !location || !imageLink)){
        const c=raw[j];
+       if(!pogReady && isPercentLike(c)) { pogReady=c; j++; continue; }
+       if(!location && (isLocationLike(c) || /^See adjacency$/i.test(c))) { location=c; j++; continue; }
        if(/^https?:\/\//i.test(c)) { imageLink=c; break; }
        if(matchKnownDept(c) || (isDeptGuess(c) && raw.slice(j+1,j+5).some(x=>isType(x)||isPogId(x))) || isType(c)) break;
        j++;
      }
      const department=finalizeDept(cur,pogId);
-     if(department && pogId && desc) rows.push({department,type,pogId,description:desc,setHours:hours,imageRef:'',imageLink:''});
+     if(department && pogId && desc) rows.push({department,type,pogId,description:desc,setHours:hours,pogReady,location,imageRef:'',imageLink:''});
    }
  }
  return dedupe(rows);
@@ -630,7 +654,7 @@ function parseGroupedWorkload(text){
 
     if(isType(line)){
       const type = normalizeType(line);
-      let pogId = '', description = '', setHours = '';
+      let pogId = '', description = '', setHours = '', pogReady = '', location = '';
       let j = i + 1;
 
       while(j < lines.length && !pogId){
@@ -640,25 +664,37 @@ function parseGroupedWorkload(text){
         j++;
       }
 
-      while(j < lines.length && !description){
-        const c = lines[j];
+      // Find the first real text description after POG ID and before hours/next record
+      let k = j;
+      while(k < lines.length){
+        const c = lines[k];
         if(isDeptHeader(c) || isType(c)) break;
-        if(!isNoise(c) && !isPogId(c) && !isHours(c) && !isCount(c) && c !== 'N/A' && !/^x\d/i.test(c) && !/^[A-Z]\d+\(/i.test(c) && !/^\d+'/.test(c) && !/sharepoint/i.test(c)){
+        if(isDescriptionCandidate(c)){
           description = c;
+          break;
         }
-        j++;
+        k++;
       }
 
-      while(j < lines.length && !setHours){
-        const c = lines[j];
+      // Find the first decimal/set-hours value after the description or after POG ID
+      k = description ? k + 1 : j;
+      while(k < lines.length){
+        const c = lines[k];
         if(isDeptHeader(c) || isType(c)) break;
-        if(isHours(c)){ setHours = c; break; }
-        j++;
+        if(isHours(c)){ setHours = c; k++; break; }
+        k++;
+      }
+      while(k < lines.length){
+        const c = lines[k];
+        if(isDeptHeader(c) || isType(c)) break;
+        if(!pogReady && isPercentLike(c)){ pogReady = c; k++; continue; }
+        if(!location && (isLocationLike(c) || /^See adjacency$/i.test(c))){ location = c; k++; continue; }
+        k++;
       }
 
       const department = finalizeDept(currentDept, pogId);
       if(department && pogId && description){
-        rows.push({department, type, pogId, description, setHours, imageRef:'', imageLink:''});
+        rows.push({department, type, pogId, description, setHours, pogReady, location, imageRef:'', imageLink:''});
       }
     }
   }
@@ -678,7 +714,7 @@ function smartParse(text){
   if(!rows.length) rows=parseStacked(text);
   return dedupe(rows);
 }
-function preview(rows){const box=$('parsePreview'); if(!rows.length){box.innerHTML='<span class="empty">No rows could be parsed. Add departments and prefix rules first, then try again. This importer now also handles grouped text copied from workload reports.</span>'; return;} box.innerHTML='<div class="muted" style="margin-bottom:8px">'+rows.length+' row(s) detected.</div><div class="tw"><table><thead><tr><th>Department</th><th>Type</th><th>POG ID</th><th>Description</th><th>Hours</th><th>Split rule</th></tr></thead><tbody>'+rows.slice(0,10).map(r=>'<tr><td>'+esc(r.department)+'</td><td>'+esc(r.type)+'</td><td>'+esc(r.pogId)+'</td><td>'+esc(r.description)+'</td><td>'+esc(r.setHours||'')+'</td><td>'+(Number(r.setHours||0)>8?'<span class="badge badgeWarn">Split Required</span>':'')+'</td></tr>').join('')+'</tbody></table></div>'}
+function preview(rows){const box=$('parsePreview'); if(!rows.length){box.innerHTML='<span class="empty">No rows could be parsed. Add departments and prefix rules first, then try again. This importer now handles grouped text copied from Target workload reports and ignores % ready / location lines.</span>'; return;} box.innerHTML='<div class="muted" style="margin-bottom:8px">'+rows.length+' row(s) detected.</div><div class="tw"><table><thead><tr><th>Department</th><th>Type</th><th>POG ID</th><th>Description</th><th>Hours</th><th>POG Ready</th><th>Location</th><th>Split rule</th></tr></thead><tbody>'+rows.slice(0,10).map(r=>'<tr><td>'+esc(r.department)+'</td><td>'+esc(r.type)+'</td><td>'+esc(r.pogId)+'</td><td>'+esc(r.description)+'</td><td>'+esc(r.setHours||'')+'</td><td>'+esc(r.pogReady||'')+'</td><td>'+esc(r.location||'')+'</td><td>'+(Number(r.setHours||0)>8?'<span class="badge badgeWarn">Split Required</span>':'')+'</td></tr>').join('')+'</tbody></table></div>'}
 function getTeamHours(teamName, day){const tm=state.team.find(t=>t.name===teamName); return Number(tm?.hours?.[day]||0)}
 function planHours(p){const v = safe(p.assignedHours)!=='' ? Number(p.assignedHours) : Number(p.setHours||0); return isNaN(v)?0:v}
 function rebalanceSplitAssignments(pogId){
@@ -1001,7 +1037,7 @@ function addDept(){const name=safe($('deptName').value).replace(/\s+/g,' '); if(
 function addRule(){ const prefix=safe($('rulePrefix').value).toUpperCase(); const existing=safe($('ruleDept').value); const typed=safe($('ruleDeptNew').value).replace(/\s+/g,' '); const department=typed || existing; if(!prefix||!department) return alert('Enter a prefix and choose or type a department.'); if(state.rules.some(r=>safe(r.prefix).toUpperCase()===prefix)) return alert('That prefix already exists.'); ensureDept(department); state.rules.push({prefix,department}); state.rules.sort((a,b)=>safe(a.prefix).localeCompare(safe(b.prefix))); $('rulePrefix').value=''; $('ruleDept').value=''; $('ruleDeptNew').value=''; save()}
 function addPog(){const department=safe($('pogDept').value), type=safe($('pogType').value)||'POG', pogId=safe($('pogId').value), description=safe($('pogDesc').value), setHours=safe($('pogHours').value), imageRef=safe($('imgRef').value), imageLink=safe($('imgLink').value); if(!department||!pogId||!description) return alert('Department, POG ID, and description are required.'); ensureDept(department); state.pogs.push({department,type,pogId,description,setHours,imageRef,imageLink}); ['pogId','pogDesc','pogHours','imgRef','imgLink'].forEach(id=>$(id).value=''); $('pogType').value='POG'; save()}
 function doPreview(){preview(smartParse($('rawBox').value))}
-function doImport(){const rows=smartParse($('rawBox').value); if(!rows.length) return alert('No rows could be parsed. Add departments and prefix rules first, then try again. This importer now also handles grouped text copied from workload reports.'); rows.forEach(r=>{ensureDept(r.department); state.pogs.push(r)}); $('rawBox').value=''; preview(rows); save(false); render(); show(rows.length+' POG row(s) imported.')}
+function doImport(){const rows=smartParse($('rawBox').value); if(!rows.length) return alert('No rows could be parsed. Add departments and prefix rules first, then try again. This importer now handles grouped text copied from Target workload reports and ignores % ready / location lines.'); rows.forEach(r=>{ensureDept(r.department); state.pogs.push(r)}); $('rawBox').value=''; preview(rows); save(false); render(); show(rows.length+' POG row(s) imported.')}
 function unassignAllPogs(){
   if(!confirm('Unassign all POGs from team members?')) return;
   state.plans = [];
@@ -1118,6 +1154,8 @@ function editPog(i){
   p.editPogId=p.pogId;
   p.editDescription=p.description;
   p.editSetHours=p.setHours;
+  p.editPogReady=p.pogReady||'';
+  p.editLocation=p.location||'';
   p.editImageRef=p.imageRef||'';
   p.editImageLink=p.imageLink||'';
   render();
@@ -1130,6 +1168,8 @@ function updatePogField(i,key,val){
   else if(key==='pogId') p.editPogId=val;
   else if(key==='description') p.editDescription=val;
   else if(key==='setHours') p.editSetHours=val;
+  else if(key==='pogReady') p.editPogReady=val;
+  else if(key==='location') p.editLocation=val;
   else if(key==='imageRef') p.editImageRef=val;
   else if(key==='imageLink') p.editImageLink=val;
 }
@@ -1149,14 +1189,16 @@ function savePogEdit(i){
   p.pogId=pogId;
   p.description=description;
   p.setHours=safe(p.editSetHours);
+  p.pogReady=safe(p.editPogReady);
+  p.location=safe(p.editLocation);
   p.imageRef=safe(p.editImageRef);
   p.imageLink=safe(p.editImageLink);
-  delete p.editing; delete p.editDepartment; delete p.editType; delete p.editPogId; delete p.editDescription; delete p.editSetHours; delete p.editImageRef; delete p.editImageLink;
+  delete p.editing; delete p.editDepartment; delete p.editType; delete p.editPogId; delete p.editDescription; delete p.editSetHours; delete p.editPogReady; delete p.editLocation; delete p.editImageRef; delete p.editImageLink;
   save();
 }
 function cancelPogEdit(i){
   const p=state.pogs[i];
-  delete p.editing; delete p.editDepartment; delete p.editType; delete p.editPogId; delete p.editDescription; delete p.editSetHours; delete p.editImageRef; delete p.editImageLink;
+  delete p.editing; delete p.editDepartment; delete p.editType; delete p.editPogId; delete p.editDescription; delete p.editSetHours; delete p.editPogReady; delete p.editLocation; delete p.editImageRef; delete p.editImageLink;
   render();
 }
 function editTeam(i){
